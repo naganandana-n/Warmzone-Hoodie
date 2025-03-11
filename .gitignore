@@ -1,0 +1,44 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Virtual Environment
+venv/
+.env/
+*.venv
+
+# Ignore Build and Distribution Files
+build/
+dist/
+*.spec
+*.egg-info/
+
+# Ignore PyInstaller Executables
+*.exe
+*.dll
+*.so
+*.dylib
+*.app/
+*.pkg/
+
+# Ignore Logs and Temporary Files
+*.log
+logs/
+debug.log
+*.tmp
+
+# Ignore System Files (Mac & Windows)
+.DS_Store
+Thumbs.db
+
+# Ignore IDE and Editor Files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Ignore Windows Python Environment
+Scripts/
+Lib/
+Include/
