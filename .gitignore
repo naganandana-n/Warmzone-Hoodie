@@ -16,7 +16,6 @@ dist/
 *.egg-info/
 
 # Ignore PyInstaller Executables
-*.exe
 *.dll
 *.so
 *.dylib
