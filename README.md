@@ -11,6 +11,6 @@ Install necessary libraries:
 - pip install pynput numpy pyinstaller
   
 Save the mouse.py file and run this to create .exe file:
-- pyinstaller --onefile --noconsole mouse.py
+- pyinstaller --onefile mouse.py
   
 Go to dist\mouse.exe and run it.
