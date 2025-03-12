@@ -39,9 +39,7 @@ Save the screen.py file and run the program:
 - `python screen.py`
   
 As the colors on your screen change, the terminal will show: 
-`Screen Color: RGB (120, 45, 200)
-Screen Color: RGB (50, 210, 90)
-Screen Color: RGB (255, 180, 30)`
+`Screen Color: RGB (120, 45, 200)`
 
 To create the .exe file:
 - `pyinstaller --onefile screen.py`
