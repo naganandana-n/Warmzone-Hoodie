@@ -2,7 +2,7 @@
 
 ## Steps to run mouse.py:
 Set up a virtual environment:
-- python -m venv venv
+`python -m venv venv`
 
 Activate virtual environment:
 - venv\Scripts\activate
