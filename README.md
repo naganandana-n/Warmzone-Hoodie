@@ -15,6 +15,21 @@ Save the mouse.py file and run this to create .exe file:
   
 Go to `dist\mouse.exe` and run it.
 
+## Steps to run screen.py:
+Install necessary libraries:
+- `pip install mss numpy pillow`
+
+Save the screen.py file and run the program:
+- `python screen.py`
+  
+As the colors on your screen change, the terminal will show: 
+- Screen Color: RGB (120, 45, 200)
+
+To create the .exe file:
+- `pyinstaller --onefile screen.py`
+
+Go to `dist\screen.exe` and run it.
+
 ## Steps to run audio.py:
 Install necessary libraries:
 - `pip install pipwin`
@@ -30,18 +45,3 @@ To create the .exe file:
 - `pyinstaller --onefile audio.py`
 
 Go to `dist\audio.exe` and run it.
-
-## Steps to run screen.py:
-Install necessary libraries:
-- `pip install mss numpy pillow`
-
-Save the screen.py file and run the program:
-- `python screen.py`
-  
-As the colors on your screen change, the terminal will show: 
-- Screen Color: RGB (120, 45, 200)
-
-To create the .exe file:
-- `pyinstaller --onefile screen.py`
-
-Go to `dist\screen.exe` and run it.
