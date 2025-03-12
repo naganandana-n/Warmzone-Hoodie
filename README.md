@@ -32,9 +32,7 @@ Go to `dist\screen.exe` and run it.
 
 ## Steps to run audio.py:
 Install necessary libraries:
-- `pip install pipwin`
-- `pipwin install pyaudio`
-- `pip install numpy`
+- `pip install sounddevice numpy pyinstaller`
 
 Save the audio.py file and run the program:
 - `python audio.py`
