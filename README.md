@@ -30,6 +30,15 @@ To create the .exe file:
 
 Go to `dist\screen.exe` and run it.
 
+To run screen2.py:
+- `pip install mss numpy pillow`
+- `pip install scikit-learn`
+
+Save the screen.py file and run the program:
+- `python screen2.py`
+
+You should see the RGB codes of the top 5 dominant colors from the screen being displayed.
+
 ## Steps to run audio.py:
 Install necessary libraries:
 - `pip install sounddevice numpy pyinstaller`
