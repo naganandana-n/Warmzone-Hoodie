@@ -115,7 +115,7 @@ def color_contrast(c1, c2):
     return abs(color_luminance(c1) - color_luminance(c2))
 
 # **🔄 Screen Color Extraction**
-def get_top_screen_colors(num_colors=5, min_color_percentage=20):
+def get_top_screen_colors(num_colors=5):
     """Captures the screen and extracts the top 2 most visually distinct colors."""
     with mss.mss() as sct:
         screenshot = sct.grab(sct.monitors[MONITOR_INDEX])
@@ -133,27 +133,13 @@ def get_top_screen_colors(num_colors=5, min_color_percentage=20):
         kmeans = KMeans(n_clusters=num_colors, n_init=10)
         kmeans.fit(pixels)
 
-        # Count occurrences
-        labels, counts = np.unique(kmeans.labels_, return_counts=True)
-        total_pixels = len(pixels)
-
-        # Extract colors that occupy more than min threshold
-        filtered_colors = []
-        for label, count in zip(labels, counts):
-            percentage = (count / total_pixels) * 100
-            color = tuple(map(int, kmeans.cluster_centers_[label]))
-
-            # Ensure color is bright enough & meets min percentage threshold
-            if (max(color) >= MIN_BRIGHTNESS_THRESHOLD) and (percentage >= min_color_percentage):
-                filtered_colors.append({
-                    "RGB": (color[2], color[1], color[0]),  # Convert BGR → RGB
-                    "Percentage": round(percentage, 2)
-                })
+        # Extract colors
+        extracted_colors = [tuple(map(int, kmeans.cluster_centers_[i])) for i in range(num_colors)]
 
         # **Step 1: Sort by highest contrast difference**
         sorted_colors = sorted(
-            filtered_colors,
-            key=lambda x: color_contrast(x["RGB"], (128, 128, 128)) * CONTRAST_WEIGHT + x["Percentage"],
+            extracted_colors,
+            key=lambda x: color_contrast(x, (128, 128, 128)) * CONTRAST_WEIGHT,
             reverse=True
         )
 
@@ -166,7 +152,7 @@ while True:
     colors = get_top_screen_colors()
     
     # Convert to JSON format
-    json_data = json.dumps(colors)
+    json_data = json.dumps({"Color1": colors[0], "Color2": colors[1]})
 
     # Send data over serial
     if ser:
