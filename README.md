@@ -1,5 +1,11 @@
 # Warmzone Hoodie
 
+## Table of Contents
+- [Steps to run mouse.py](#steps-to-run-mousepy)
+- [Steps to run screen.py](#steps-to-run-screenpy)
+- [Steps to run screen2.py & screen-quadrants.py](#steps-to-run-screen2py--screen-quadrantspy)
+- [Steps to run audio.py](#steps-to-run-audiopy)
+
 ## Steps to run mouse.py:
 Set up a virtual environment:
 - `python -m venv venv`
