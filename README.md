@@ -37,6 +37,7 @@ To create the .exe file:
 Go to `dist\screen.exe` and run it.
 
 ## Steps to run screen2.py & screen-quadrants.py:
+Install necessary libraries:
 - `pip install mss numpy pillow`
 - `pip install scikit-learn`
 
@@ -47,16 +48,29 @@ Save the screen2.py / screen-quadrants.py file and run the program:
 screen2.py output: You should see the RGB codes of the top 5 dominant colors from the screen being displayed.
 screen-quadrants.py output: You should see the dominant colors in each quadrant of the screen (to be displayed around the V).
 
-## Steps to run audio.py:
+## Steps to run audio.py & audio2.py:
+Check if Stereo Mix is Enabled and Set as Default:
+- Open Sound Settings (Win + R → mmsys.cpl → Enter)
+- Go to the Recording tab.
+- Find Stereo Mix.
+- Right-click it and Enable.
+- Click Set as Default Device.
+- Click Apply → OK.
+- Right-click Stereo Mix → Select Properties.
+- Go to the Levels tab.
+- Increase the volume to at least 50%.
+- Click Apply → OK.
+
 Install necessary libraries:
 - `pip install sounddevice numpy pyinstaller`
 
-Save the audio.py file and run the program:
+Save the audio.py / audio2.py file and run the program:
 - `python audio.py`
+- `python audio2.py`
   
 Play music or system audio, and you should see live intensity values from 0 to 5.
 
 To create the .exe file:
 - `pyinstaller --onefile audio.py`
-
+  
 Go to `dist\audio.exe` and run it.
