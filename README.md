@@ -30,14 +30,16 @@ To create the .exe file:
 
 Go to `dist\screen.exe` and run it.
 
-To run screen2.py:
+## Steps to run screen2.py & screen-quadrants.py:
 - `pip install mss numpy pillow`
 - `pip install scikit-learn`
 
-Save the screen.py file and run the program:
+Save the screen2.py / screen-quadrants.py file and run the program:
 - `python screen2.py`
+- `python screen-quadrants.py`
 
-You should see the RGB codes of the top 5 dominant colors from the screen being displayed.
+screen2.py output: You should see the RGB codes of the top 5 dominant colors from the screen being displayed.
+screen-quadrants.py output: You should see the dominant colors in each quadrant of the screen (to be displayed around the V).
 
 ## Steps to run audio.py:
 Install necessary libraries:
