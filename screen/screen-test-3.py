@@ -11,11 +11,7 @@ import os
 # Configuration File
 CONFIG_FILE = "settings.json"
 
-# Minimum brightness for LED visibility (0-255 scale)
-MIN_BRIGHTNESS_THRESHOLD = 50  
-CONTRAST_WEIGHT = 1.5  # Higher means more contrast influence
-
-# Load Saved Settings
+# Load Saved Settings (Monitor & Serial Port)
 def load_config():
     """Loads saved monitor & serial port selection from file."""
     if os.path.exists(CONFIG_FILE):
@@ -29,12 +25,12 @@ def save_config(settings):
     with open(CONFIG_FILE, "w") as file:
         json.dump(settings, file)
 
-# Load Previous Configuration
+# Load Previous Configuration (If Available)
 config = load_config()
 SERIAL_PORT = config.get("serial_port")
 MONITOR_INDEX = config.get("monitor_index")
 
-# Auto-Detect Serial Port
+# Auto-Detect & Select Serial Port
 def find_serial_port():
     """Lists available serial ports and prompts user to select one."""
     global SERIAL_PORT
@@ -60,11 +56,11 @@ def find_serial_port():
                 save_config(config)  # Save selection
                 return SERIAL_PORT
             else:
-                print(" Invalid selection. Choose a valid port number.")
+                print(" Invalid selection. Please choose a valid port number.")
         except ValueError:
             print(" Please enter a number.")
 
-# Auto-Detect Monitor
+# Auto-Detect & Select Display
 def find_monitor():
     """Lists available displays and prompts user to select one."""
     global MONITOR_INDEX
@@ -74,7 +70,7 @@ def find_monitor():
             return MONITOR_INDEX
 
         print("\n Available Monitors:")
-        for i, monitor in enumerate(sct.monitors[1:], start=1):
+        for i, monitor in enumerate(sct.monitors[1:], start=1):  # Ignore monitor[0] (virtual full-screen)
             print(f"  [{i}] {monitor}")
 
         while True:
@@ -104,7 +100,7 @@ if SERIAL_PORT:
     except serial.SerialException:
         print(f" Failed to connect to {SERIAL_PORT}. Check your ESP32 connection.")
 
-# **🔍 Contrast Calculation**
+# **Contrast Calculation**
 def color_luminance(color):
     """Calculates luminance based on human perception."""
     r, g, b = color
@@ -114,9 +110,9 @@ def color_contrast(c1, c2):
     """Calculates contrast difference between two colors."""
     return abs(color_luminance(c1) - color_luminance(c2))
 
-# **🔄 Screen Color Extraction**
-def get_top_screen_colors(num_colors=5):
-    """Captures the screen and extracts the top 2 most visually distinct colors."""
+# **Extract Screen Colors**
+def get_top_contrast_colors(num_colors=5):
+    """Captures the screen, extracts the top 2 most contrasting colors."""
     with mss.mss() as sct:
         screenshot = sct.grab(sct.monitors[MONITOR_INDEX])
         
@@ -136,20 +132,20 @@ def get_top_screen_colors(num_colors=5):
         # Extract colors
         extracted_colors = [tuple(map(int, kmeans.cluster_centers_[i])) for i in range(num_colors)]
 
-        # **Step 1: Sort by highest contrast difference**
+        # Sort by highest contrast
         sorted_colors = sorted(
             extracted_colors,
-            key=lambda x: color_contrast(x, (128, 128, 128)) * CONTRAST_WEIGHT,
+            key=lambda x: color_contrast(x, (128, 128, 128)),  # Compare against neutral gray
             reverse=True
         )
 
-        # **Step 2: Return top 2 colors**
+        # Return top 2 colors
         return sorted_colors[:2]
 
-# 🔄 **Stream Top 2 Colors to ESP32**
+# **Stream Top 2 Colors to ESP32**
 print(" Streaming top 2 contrast colors to ESP32 in JSON format...")
 while True:
-    colors = get_top_screen_colors()
+    colors = get_top_contrast_colors()
     
     # Convert to JSON format
     json_data = json.dumps({"Color1": colors[0], "Color2": colors[1]})
