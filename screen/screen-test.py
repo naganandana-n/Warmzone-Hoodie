@@ -146,7 +146,7 @@ while True:
     colors = get_top_colors_per_quadrant()
     
     # Convert to JSON format
-    json_data = json.dumps(colors)
+    json_data = json.dumps(colors, default=lambda x: int(x))
 
     # Send data over serial
     if ser:
