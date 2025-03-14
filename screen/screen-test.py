@@ -136,7 +136,7 @@ def get_top_colors_per_quadrant(num_colors=1):
 
             # Get the dominant color (ensuring RGB format)
             color = tuple(kmeans.cluster_centers_[0].astype(int))
-            dominant_colors[quadrant] = {"R": color[0], "G": color[1], "B": color[2]}
+            dominant_colors[quadrant] = {"R": color[2], "G": color[1], "B": color[0]}
 
         return dominant_colors
 
