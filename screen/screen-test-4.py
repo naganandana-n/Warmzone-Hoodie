@@ -11,8 +11,10 @@ import os
 # Configuration File
 CONFIG_FILE = "settings.json"
 
-# White color threshold (anything above this will be ignored)
-WHITE_THRESHOLD = 220  # If R, G, and B are all above this, it's considered too close to white
+# Thresholds
+WHITE_THRESHOLD = 220  # If R, G, B > 220 → Too close to white
+GRAY_THRESHOLD = 30    # If R, G, B values are within 30 of each other, treat as gray
+LUMINANCE_THRESHOLD = 180  # Perceptual brightness threshold (0-255)
 
 # Load Saved Settings (Monitor & Serial Port)
 def load_config():
@@ -59,7 +61,7 @@ def find_serial_port():
                 save_config(config)  # Save selection
                 return SERIAL_PORT
             else:
-                print(" Invalid selection. Please choose a valid port number.")
+                print(" Invalid selection. Choose a valid port number.")
         except ValueError:
             print(" Please enter a number.")
 
@@ -73,7 +75,7 @@ def find_monitor():
             return MONITOR_INDEX
 
         print("\n Available Monitors:")
-        for i, monitor in enumerate(sct.monitors[1:], start=1):  # Ignore monitor[0] (virtual full-screen)
+        for i, monitor in enumerate(sct.monitors[1:], start=1):
             print(f"  [{i}] {monitor}")
 
         while True:
@@ -113,9 +115,27 @@ def color_contrast(c1, c2):
     """Calculates contrast difference between two colors."""
     return abs(color_luminance(c1) - color_luminance(c2))
 
+def is_near_white_or_gray(color):
+    """Returns True if the color is close to white or gray."""
+    r, g, b = color
+
+    # Check if all RGB values are above WHITE_THRESHOLD
+    if r > WHITE_THRESHOLD and g > WHITE_THRESHOLD and b > WHITE_THRESHOLD:
+        return True  # Too close to white
+    
+    # Check if the color is too gray (difference between R, G, B is small)
+    if max(r, g, b) - min(r, g, b) < GRAY_THRESHOLD:
+        return True  # Too gray
+
+    # Check if the color is too bright (Luminance is high)
+    if color_luminance(color) > LUMINANCE_THRESHOLD:
+        return True  # Too bright
+
+    return False  # Color is valid
+
 # **Extract Screen Colors**
 def get_top_contrast_colors(num_colors=5):
-    """Captures the screen, extracts the top 2 most contrasting colors, while filtering out white-like colors."""
+    """Captures the screen, extracts the top 2 most contrasting colors, while filtering out near-white/gray colors."""
     with mss.mss() as sct:
         screenshot = sct.grab(sct.monitors[MONITOR_INDEX])
         
@@ -132,10 +152,10 @@ def get_top_contrast_colors(num_colors=5):
         kmeans = KMeans(n_clusters=num_colors, n_init=10)
         kmeans.fit(pixels)
 
-        # Extract colors and filter out white-like colors
+        # Extract colors and filter out near-white/gray colors
         extracted_colors = [
             tuple(map(int, kmeans.cluster_centers_[i])) for i in range(num_colors)
-            if all(c < WHITE_THRESHOLD for c in kmeans.cluster_centers_[i])
+            if not is_near_white_or_gray(kmeans.cluster_centers_[i])
         ]
 
         # If all colors were filtered out, use default fallback colors
