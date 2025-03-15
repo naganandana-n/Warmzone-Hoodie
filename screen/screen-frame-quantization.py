@@ -8,11 +8,12 @@ import serial.tools.list_ports
 import json
 import os
 from collections import Counter
+import threading
 
 # Configuration File
 CONFIG_FILE = "settings.json"
 
-# White threshold: Any color with all RGB values above this will be ignored
+# White threshold: Any color close to white will be ignored
 WHITE_THRESHOLD = 220  
 
 # Load Saved Settings
@@ -60,7 +61,7 @@ def find_serial_port():
                 save_config(config)  # Save selection
                 return SERIAL_PORT
             else:
-                print(" Invalid selection. Choose a valid port number.")
+                print(" Invalid selection. Please choose a valid port number.")
         except ValueError:
             print(" Please enter a number.")
 
@@ -107,9 +108,9 @@ if SERIAL_PORT:
 # Store previous frame colors
 previous_frame_colors = None
 
-# **Extract Dominant Colors Using Histogram**
-def get_dominant_colors(num_colors=5):
-    """Extracts the most frequent colors from the screen using histograms instead of K-Means."""
+# **Extract Changed Colors**
+def get_changed_colors(num_colors=5):
+    """Detects all newly changed colors compared to the last frame."""
     global previous_frame_colors
 
     with mss.mss() as sct:
@@ -119,7 +120,7 @@ def get_dominant_colors(num_colors=5):
         img = Image.fromarray(np.array(screenshot)).convert("RGB")
 
         # Resize for faster processing
-        img = img.resize((100, 100))
+        img = img.resize((50, 50))
 
         # Convert to NumPy array
         pixels = np.array(img).reshape(-1, 3)
@@ -135,17 +136,20 @@ def get_dominant_colors(num_colors=5):
             color for color in sorted_colors if not all(c > WHITE_THRESHOLD for c in color)
         ]
 
+        # Convert colors to Python int (Fixes JSON serialization issue)
+        filtered_colors = [tuple(map(int, color)) for color in filtered_colors]
+
         if previous_frame_colors is None:
             previous_frame_colors = set(filtered_colors)
-            return filtered_colors[:2]
+            return filtered_colors  # Return all colors on first frame
 
-        # Find only changed colors
+        # **Find only changed colors**
         changed_colors = [color for color in filtered_colors if color not in previous_frame_colors]
 
         # Update stored colors
         previous_frame_colors = set(filtered_colors)
 
-        return changed_colors[:2]  # Return top 2 changed colors
+        return changed_colors  # Return all new colors
 
 # **Display Changed Colors in a Window**
 def show_colors(colors):
@@ -169,21 +173,34 @@ def show_colors(colors):
     cv2.imshow("Changed Colors", color_blocks)
     cv2.waitKey(1)  # Refresh the window
 
-# **Stream Changed Colors to ESP32**
-print(" Streaming dominant screen colors to ESP32 in JSON format...")
+# **Stream Changed Colors to ESP32 (Runs in a separate thread)**
+def stream_to_esp():
+    global ser
+    print(" Streaming all changed screen colors to ESP32 in JSON format...")
+    while True:
+        colors = get_changed_colors()
+        
+        if colors:
+            # Convert to JSON format
+            json_data = json.dumps({"Colors": colors})
+
+            # Send data over serial
+            if ser:
+                ser.write(f"{json_data}\n".encode())
+                print(f" Sent to ESP32: {json_data}")
+
+            # Show colors visually in a window
+            show_colors(colors)
+
+        time.sleep(0.1)  # Faster refresh rate (10x faster than before)
+
+# **Run the detection in a separate thread for smooth performance**
+esp_thread = threading.Thread(target=stream_to_esp, daemon=True)
+esp_thread.start()
+
+# **Keep OpenCV Window Open**
 while True:
-    colors = get_dominant_colors()
-    
-    if colors:
-        # Convert to JSON format
-        json_data = json.dumps({"Color1": colors[0], "Color2": colors[1]})
+    if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to exit
+        break
 
-        # Send data over serial
-        if ser:
-            ser.write(f"{json_data}\n".encode())
-            print(f" Sent to ESP32: {json_data}")
-
-        # Show colors visually in a window
-        show_colors(colors)
-
-    time.sleep(0.5)  # Adjust refresh rate as needed
+cv2.destroyAllWindows()
