@@ -86,15 +86,17 @@ def get_screen_grid_colors():
         screen_size = sct.monitors[MONITOR_INDEX]
         width, height = screen_size["width"], screen_size["height"]
         screenshot = sct.grab(screen_size)
-        img = Image.fromarray(np.array(screenshot)).convert("RGB")
 
-        enhancer = ImageEnhance.Color(img)
-        img = enhancer.enhance(1.2)  
+        # Convert Screenshot to NumPy Array (BGR)
+        img_bgr = np.array(screenshot)
 
-        img_array = np.array(img)
+        # Convert BGR to RGB before processing
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-        # Convert to LAB
-        img_lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
+        # Enhance Colors
+        pil_img = Image.fromarray(img_rgb)
+        enhancer = ImageEnhance.Color(pil_img)
+        img_rgb = np.array(enhancer.enhance(1.2))  
 
         box_width = width // GRID_COLS
         box_height = height // GRID_ROWS
@@ -104,13 +106,13 @@ def get_screen_grid_colors():
             for col in range(GRID_COLS):
                 x1, y1 = col * box_width, row * box_height
                 x2, y2 = x1 + box_width, y1 + box_height
-                section = img_lab[y1:y2, x1:x2]
-                avg_color = np.median(section, axis=(0, 1)).astype(int)
+                section = img_rgb[y1:y2, x1:x2]
 
-                # Convert LAB to RGB
-                avg_color = cv2.cvtColor(np.uint8([[avg_color]]), cv2.COLOR_LAB2RGB)[0][0]
+                avg_color = np.mean(section, axis=(0, 1)).astype(int)
+
                 r, g, b = avg_color[0].item(), avg_color[1].item(), avg_color[2].item()
                 grid_colors.append({"R": r, "G": g, "B": b})
+
         return grid_colors
 
 # Find 6 Most Distinct Colors
@@ -119,7 +121,7 @@ def get_most_distinct_colors(colors, num_colors=NUM_DISTINCT_COLORS):
         return colors
     color_array = np.array([[c["R"], c["G"], c["B"]] for c in colors])
 
-    # Boost warm colors
+    # Boost warm colors (if needed)
     weights = np.array([1.5, 1.0, 0.7])  
     weighted_colors = color_array * weights
 
@@ -147,8 +149,7 @@ def show_grid_colors(colors):
             x1, y1 = col * block_size, row * block_size
             x2, y2 = x1 + block_size, y1 + block_size
 
-            # OpenCV uses BGR, so swap Red & Blue
-            color_grid[y1:y2, x1:x2] = (r, g, b)
+            color_grid[y1:y2, x1:x2] = (b, g, r)  # OpenCV expects BGR
 
     cv2.imshow("Detected Grid Colors", color_grid)
     cv2.waitKey(1)
@@ -158,9 +159,8 @@ while True:
     colors = get_screen_grid_colors()
     distinct_colors = get_most_distinct_colors(colors)
 
-    # Fix RGB/BGR issue by swapping **Red & Blue**
-    for color in distinct_colors:
-        color["R"], color["B"] = color["B"], color["R"]  # Swap Red & Blue
+    # Debugging: Print first few colors in the terminal
+    print("Detected Colors:", distinct_colors[:6])
 
     json_data = json.dumps({"LEDColors": distinct_colors})
 
