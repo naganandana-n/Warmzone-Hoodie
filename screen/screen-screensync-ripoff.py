@@ -1,7 +1,7 @@
 import mss
 import numpy as np
 import cv2
-from PIL import Image, ImageStat, ImageEnhance
+from PIL import Image, ImageEnhance
 import time
 import serial
 import serial.tools.list_ports
@@ -11,14 +11,10 @@ import os
 # Configuration File
 CONFIG_FILE = "settings.json"
 
-# Screen Capture Settings
-SENSOR_SIZES = {
-    "tiny": 0.05,
-    "small": 0.075,
-    "medium": 0.15,
-    "large": 0.33,
-    "xlarge": 0.5
-}
+# Grid Settings
+GRID_ROWS = 10  # Number of rows in the grid
+GRID_COLS = 10  # Number of columns in the grid
+UPDATE_INTERVAL = 0.5  # Time in seconds between updates
 
 # Load Saved Settings (Monitor & Serial Port)
 def load_config():
@@ -34,13 +30,12 @@ def save_config(settings):
     with open(CONFIG_FILE, "w") as file:
         json.dump(settings, file)
 
-# Load Previous Configuration (If Available)
+# Load Previous Configuration
 config = load_config()
 SERIAL_PORT = config.get("serial_port")
 MONITOR_INDEX = config.get("monitor_index")
-SENSOR_SIZE = config.get("sensor_size", "small")  # Default to 'small'
 
-# Auto-Detect & Select Serial Port
+# Auto-Detect Serial Port
 def find_serial_port():
     """Lists available serial ports and prompts user to select one."""
     global SERIAL_PORT
@@ -66,7 +61,7 @@ def find_serial_port():
                 save_config(config)  # Save selection
                 return SERIAL_PORT
             else:
-                print("Invalid selection. Please choose a valid port number.")
+                print("Invalid selection. Choose a valid port number.")
         except ValueError:
             print("Please enter a number.")
 
@@ -80,7 +75,7 @@ def find_monitor():
             return MONITOR_INDEX
 
         print("\nAvailable Monitors:")
-        for i, monitor in enumerate(sct.monitors[1:], start=1):  
+        for i, monitor in enumerate(sct.monitors[1:], start=1):
             print(f"  [{i}] {monitor}")
 
         while True:
@@ -110,64 +105,94 @@ if SERIAL_PORT:
     except serial.SerialException:
         print(f"Failed to connect to {SERIAL_PORT}. Check your ESP32 connection.")
 
-# Function to calculate bounding box size
-def calculate_bounding_box(screen_size, sensor_size="small"):
-    """Calculates the bounding box for capturing a small portion of the screen."""
-    width, height = screen_size
-    center_x, center_y = width // 2, height // 2
-    offset = int(min(width, height) * SENSOR_SIZES[sensor_size])
-
-    return (center_x - offset, center_y - offset, center_x + offset, center_y + offset)
-
-# **Extract Enhanced Screen Colors**
-def get_screen_color():
-    """Captures a small area of the screen, enhances colors, and extracts the dominant color."""
+# **Extract Grid Colors**
+def get_screen_grid_colors():
+    """Breaks the screen into a grid and extracts colors from each small region."""
     with mss.mss() as sct:
         screen_size = sct.monitors[MONITOR_INDEX]
-        bbox = calculate_bounding_box((screen_size["width"], screen_size["height"]), SENSOR_SIZE)
+        width, height = screen_size["width"], screen_size["height"]
 
-        # Capture selected area
-        screenshot = sct.grab(bbox)
+        # Capture full screen
+        screenshot = sct.grab(screen_size)
         
         # Convert to RGB Image
         img = Image.fromarray(np.array(screenshot)).convert("RGB")
 
-        # Enhance color vibrancy
+        # Enhance colors
         enhancer = ImageEnhance.Color(img)
         img = enhancer.enhance(3)  # Boost color saturation
 
-        # Extract dominant color using median
-        image_stats = ImageStat.Stat(img)
-        dominant_color = tuple(map(int, image_stats.median[:3]))  # (R, G, B)
+        # Convert to NumPy array for fast processing
+        img_array = np.array(img)
 
-        return dominant_color
+        # Calculate grid sizes
+        box_width = width // GRID_COLS
+        box_height = height // GRID_ROWS
+
+        # Extract colors from each grid section
+        grid_colors = []
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                # Define the box region
+                x1, y1 = col * box_width, row * box_height
+                x2, y2 = x1 + box_width, y1 + box_height
+
+                # Crop the section
+                section = img_array[y1:y2, x1:x2]
+
+                # Compute the mean color in the section
+                avg_color = np.mean(section, axis=(0, 1)).astype(int)
+
+                # Convert BGR to RGB
+                r, g, b = avg_color[0], avg_color[1], avg_color[2]
+
+                # Store the color
+                grid_colors.append({"R": r, "G": g, "B": b})
+
+        return grid_colors
 
 # **Display Colors in a Window**
-def show_color(color):
-    """Displays detected color in an OpenCV window."""
-    height, width = 100, 300
-    color_block = np.zeros((height, width, 3), dtype=np.uint8)
-    
-    r, g, b = color  # RGB format
-    color_block[:, :] = (b, g, r)  # OpenCV uses BGR
+def show_grid_colors(colors):
+    """Displays detected grid colors in an OpenCV window."""
+    if not colors:
+        return
 
-    cv2.imshow("Detected Color", color_block)
+    rows, cols = GRID_ROWS, GRID_COLS
+    block_size = 40  # Size of each color block in pixels
+    img_height = rows * block_size
+    img_width = cols * block_size
+
+    # Create an empty canvas
+    color_grid = np.zeros((img_height, img_width, 3), dtype=np.uint8)
+
+    # Fill each grid section with the detected color
+    for row in range(rows):
+        for col in range(cols):
+            idx = row * cols + col
+            r, g, b = colors[idx]["R"], colors[idx]["G"], colors[idx]["B"]
+            x1, y1 = col * block_size, row * block_size
+            x2, y2 = x1 + block_size, y1 + block_size
+
+            # OpenCV uses BGR, so we swap RGB to BGR
+            color_grid[y1:y2, x1:x2] = (b, g, r)
+
+    cv2.imshow("Detected Grid Colors", color_grid)
     cv2.waitKey(1)  # Refresh the window
 
-# **Stream Colors to ESP32**
-print("Streaming enhanced screen colors to ESP32 in JSON format...")
+# **Stream Grid Colors to ESP32**
+print("Streaming screen grid colors to ESP32 in JSON format...")
 while True:
-    color = get_screen_color()
+    colors = get_screen_grid_colors()
 
     # Convert to JSON format
-    json_data = json.dumps({"R": color[0], "G": color[1], "B": color[2]})
+    json_data = json.dumps({"GridColors": colors})
 
     # Send data over serial
     if ser:
         ser.write(f"{json_data}\n".encode())
         print(f"Sent to ESP32: {json_data}")
 
-    # Show the color visually in a window
-    show_color(color)
+    # Show the colors visually in a window
+    show_grid_colors(colors)
 
-    time.sleep(0.1)  # Faster refresh rate
+    time.sleep(UPDATE_INTERVAL)  # Adjust refresh rate
