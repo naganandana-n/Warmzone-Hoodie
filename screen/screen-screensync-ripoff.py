@@ -147,7 +147,7 @@ def get_screen_grid_colors():
                 r, g, b = avg_color[0], avg_color[1], avg_color[2]
 
                 # Store the color
-                grid_colors.append({"R": r, "G": g, "B": b})
+                grid_colors.append({"R": int(r), "G": int(g), "B": int(b)})  # Convert NumPy ints to Python ints
 
         return grid_colors
 
@@ -184,8 +184,8 @@ print("Streaming screen grid colors to ESP32 in JSON format...")
 while True:
     colors = get_screen_grid_colors()
 
-    # Convert to JSON format
-    json_data = json.dumps({"GridColors": colors})
+    # Convert to JSON format and fix NumPy int64 issue
+    json_data = json.dumps({"GridColors": [{k: int(v) for k, v in color.items()} for color in colors]})
 
     # Send data over serial
     if ser:
