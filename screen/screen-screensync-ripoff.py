@@ -144,10 +144,10 @@ def get_screen_grid_colors():
                 avg_color = np.mean(section, axis=(0, 1)).astype(int)
 
                 # Convert BGR to RGB
-                r, g, b = avg_color[0], avg_color[1], avg_color[2]
+                r, g, b = avg_color[0].item(), avg_color[1].item(), avg_color[2].item()
 
                 # Store the color
-                grid_colors.append({"R": int(r), "G": int(g), "B": int(b)})  # Convert NumPy ints to Python ints
+                grid_colors.append({"R": r, "G": g, "B": b})  # Ensure Python int
 
         return grid_colors
 
