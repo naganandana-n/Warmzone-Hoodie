@@ -7,15 +7,16 @@ import serial
 import serial.tools.list_ports
 import json
 import os
-from itertools import combinations
+from scipy.spatial import distance
 
 # Configuration File
 CONFIG_FILE = "settings.json"
 
-# Grid Settings
-GRID_ROWS = 8
-GRID_COLS = 8
-UPDATE_INTERVAL = 0.06  # 60ms per frame
+# Grid & Color Processing
+GRID_ROWS = 10  # Number of rows in the grid
+GRID_COLS = 10  # Number of columns in the grid
+UPDATE_INTERVAL = 0.1  # Time in seconds between updates (100ms)
+NUM_DISTINCT_COLORS = 6  # Number of colors to send to the ESP32
 
 # Load Saved Settings (Monitor & Serial Port)
 def load_config():
@@ -108,7 +109,7 @@ if SERIAL_PORT:
 
 # **Extract Grid Colors**
 def get_screen_grid_colors():
-    """Breaks the screen into a grid and extracts colors."""
+    """Breaks the screen into a grid and extracts colors from each small region."""
     with mss.mss() as sct:
         screen_size = sct.monitors[MONITOR_INDEX]
         width, height = screen_size["width"], screen_size["height"]
@@ -132,7 +133,6 @@ def get_screen_grid_colors():
 
         # Extract colors from each grid section
         grid_colors = []
-
         for row in range(GRID_ROWS):
             for col in range(GRID_COLS):
                 # Define the box region
@@ -147,59 +147,78 @@ def get_screen_grid_colors():
 
                 # Convert BGR to RGB
                 r, g, b = avg_color[0].item(), avg_color[1].item(), avg_color[2].item()
-                grid_colors.append((r, g, b))
 
-        return grid_colors, img_array
+                # Store the color
+                grid_colors.append({"R": r, "G": g, "B": b})  # Ensure Python int
 
-# **Select 6 Most Distinct Colors**
-def select_most_distinct_colors(grid_colors, num_colors=6):
-    """Selects the most visually different colors from the frame."""
-    def color_distance(c1, c2):
-        return np.linalg.norm(np.array(c1) - np.array(c2))
+        return grid_colors
 
-    selected_colors = []
-    for color in grid_colors:
-        if len(selected_colors) < num_colors:
-            selected_colors.append(color)
-        else:
-            # Find least similar color and replace it
-            min_similarity = min(color_distance(color, c) for c in selected_colors)
-            if min_similarity > 30:  # Threshold to ensure different colors
-                selected_colors.append(color)
-                selected_colors = sorted(selected_colors, key=lambda x: sum(x), reverse=True)[:num_colors]
+# **Find the 6 Most Distinct Colors**
+def get_most_distinct_colors(colors, num_colors=NUM_DISTINCT_COLORS):
+    """Finds the most distinct colors using Euclidean distance."""
+    if len(colors) <= num_colors:
+        return colors  # Return all if we don't have enough
 
-    return selected_colors
+    # Convert colors to NumPy array
+    color_array = np.array([[c["R"], c["G"], c["B"]] for c in colors])
 
-# **Show Grid Colors**
-def visualize_grid(grid_colors, img_array):
+    # Compute pairwise distances
+    dist_matrix = distance.cdist(color_array, color_array, metric="euclidean")
+
+    # Sum of distances for each color
+    distinct_scores = np.sum(dist_matrix, axis=1)
+
+    # Get indices of top distinct colors
+    top_indices = np.argsort(distinct_scores)[-num_colors:]
+
+    # Return top distinct colors
+    return [colors[i] for i in top_indices]
+
+# **Display Colors in a Window**
+def show_grid_colors(colors):
     """Displays detected grid colors in an OpenCV window."""
-    height, width, _ = img_array.shape
-    vis_img = np.zeros((height, width, 3), dtype=np.uint8)
+    if not colors:
+        return
 
-    box_width = width // GRID_COLS
-    box_height = height // GRID_ROWS
+    rows, cols = GRID_ROWS, GRID_COLS
+    block_size = 40  # Size of each color block in pixels
+    img_height = rows * block_size
+    img_width = cols * block_size
 
-    for row in range(GRID_ROWS):
-        for col in range(GRID_COLS):
-            x1, y1 = col * box_width, row * box_height
-            x2, y2 = x1 + box_width, y1 + box_height
-            color = grid_colors[row * GRID_COLS + col]
-            cv2.rectangle(vis_img, (x1, y1), (x2, y2), (color[2], color[1], color[0]), -1)
+    # Create an empty canvas
+    color_grid = np.zeros((img_height, img_width, 3), dtype=np.uint8)
 
-    cv2.imshow("Detected Grid Colors", vis_img)
+    # Fill each grid section with the detected color
+    for row in range(rows):
+        for col in range(cols):
+            idx = row * cols + col
+            r, g, b = colors[idx]["R"], colors[idx]["G"], colors[idx]["B"]
+            x1, y1 = col * block_size, row * block_size
+            x2, y2 = x1 + block_size, y1 + block_size
+
+            # OpenCV uses BGR, so we swap RGB to BGR
+            color_grid[y1:y2, x1:x2] = (b, g, r)
+
+    cv2.imshow("Detected Grid Colors", color_grid)
     cv2.waitKey(1)  # Refresh the window
 
-# **Stream Data**
+# **Stream Distinct Colors to ESP32**
 print("Streaming screen grid colors to ESP32 in JSON format...")
 while True:
-    colors, img_array = get_screen_grid_colors()
-    distinct_colors = select_most_distinct_colors(colors)
+    colors = get_screen_grid_colors()
 
-    json_data = json.dumps({"Colors": [{"R": int(c[0]), "G": int(c[1]), "B": int(c[2])} for c in distinct_colors]})
+    # Find the 6 most distinct colors
+    distinct_colors = get_most_distinct_colors(colors)
 
+    # Convert to JSON format
+    json_data = json.dumps({"LEDColors": distinct_colors})
+
+    # Send data over serial
     if ser:
         ser.write(f"{json_data}\n".encode())
         print(f"Sent to ESP32: {json_data}")
 
-    visualize_grid(colors, img_array)
-    time.sleep(UPDATE_INTERVAL)
+    # Show the grid colors visually in a window
+    show_grid_colors(colors)
+
+    time.sleep(UPDATE_INTERVAL)  # Adjust refresh rate
