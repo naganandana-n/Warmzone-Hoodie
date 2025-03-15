@@ -14,13 +14,13 @@ CONFIG_FILE = "settings.json"
 # Grid Settings
 GRID_ROWS = 8  # Normal grid rows
 GRID_COLS = 8  # Normal grid cols
-CENTER_GRID_ROWS = 16  # More granularity in center
-CENTER_GRID_COLS = 16  # More granularity in center
-UPDATE_INTERVAL = 0.06  # ~60ms per frame for high-speed detection
+CENTER_GRID_ROWS = 16  # Higher resolution in center
+CENTER_GRID_COLS = 16
+UPDATE_INTERVAL = 0.06  # ~60ms per frame
 
 # Flash Detection Thresholds
-FLASH_BRIGHTNESS_THRESHOLD = 180  # Minimum brightness for a "flash"
-FLASH_DETECTION_ZONE = 0.3  # Center area of screen (percentage)
+FLASH_BRIGHTNESS_THRESHOLD = 180  # Min brightness for a "flash"
+FLASH_DETECTION_ZONE = 0.3  # Percentage of screen (center detection)
 
 # Load Saved Settings (Monitor & Serial Port)
 def load_config():
@@ -171,12 +171,31 @@ def get_screen_grid_colors():
                         flash_detected = True
                         flash_color = {"R": r, "G": g, "B": b}
 
-        return grid_colors, flash_detected, flash_color
+        return grid_colors, flash_detected, flash_color, img_array
+
+# **Show Grid Colors**
+def visualize_grid(grid_colors, img_array):
+    """Displays detected grid colors in an OpenCV window."""
+    height, width, _ = img_array.shape
+    vis_img = np.zeros((height, width, 3), dtype=np.uint8)
+
+    box_width = width // GRID_COLS
+    box_height = height // GRID_ROWS
+
+    for row in range(GRID_ROWS):
+        for col in range(GRID_COLS):
+            x1, y1 = col * box_width, row * box_height
+            x2, y2 = x1 + box_width, y1 + box_height
+            color = grid_colors[row * GRID_COLS + col]
+            cv2.rectangle(vis_img, (x1, y1), (x2, y2), (color["B"], color["G"], color["R"]), -1)
+
+    cv2.imshow("Detected Grid Colors", vis_img)
+    cv2.waitKey(1)  # Refresh the window
 
 # **Stream Grid Colors to ESP32**
 print("Streaming screen grid colors to ESP32 in JSON format...")
 while True:
-    colors, flash_detected, flash_color = get_screen_grid_colors()
+    colors, flash_detected, flash_color, img_array = get_screen_grid_colors()
 
     # If a flash is detected, send only the flash color
     if flash_detected:
@@ -189,5 +208,8 @@ while True:
     if ser:
         ser.write(f"{json_data}\n".encode())
         print(f"Sent to ESP32: {json_data}")
+
+    # Visualize Grid
+    visualize_grid(colors, img_array)
 
     time.sleep(UPDATE_INTERVAL)  # Adjust refresh rate
