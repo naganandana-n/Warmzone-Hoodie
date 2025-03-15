@@ -5,14 +5,10 @@ import serial.tools.list_ports
 import json
 import os
 import time
-from PIL import ImageGrab, ImageStat, Image
+from PIL import ImageGrab, Image
 
 # Configuration File
 CONFIG_FILE = "settings.json"
-
-# **Thresholds**
-WHITE_THRESHOLD = 220  # Ignore colors close to white
-BRIGHTNESS_THRESHOLD = 70  # Minimum brightness for LEDs
 
 # Load Saved Settings
 def load_config():
@@ -76,12 +72,12 @@ if SERIAL_PORT:
         print(f" Failed to connect to {SERIAL_PORT}. Check your ESP32 connection.")
 
 # Store previous frame colors
-previous_frame_colors = set()
+previous_frame = None
 
-# **Extract Screen Colors Using ImageStat**
-def get_new_colors():
-    """Captures the screen, extracts the main color, and returns only new colors compared to the previous frame."""
-    global previous_frame_colors
+# **Extract Changed Colors**
+def get_changed_colors():
+    """Captures the screen, compares to previous frame, and returns new colors."""
+    global previous_frame
 
     # Take a screenshot of the full screen
     screenshot = ImageGrab.grab()
@@ -89,21 +85,26 @@ def get_new_colors():
     # Resize for faster processing
     img = screenshot.resize((100, 100))
 
-    # Get color statistics (median color is often more reliable)
-    stat = ImageStat.Stat(img)
-    avg_color = tuple(map(int, stat.median))  # Get median color in (R, G, B)
+    # Convert to NumPy array
+    pixels = np.array(img)
 
-    # **Filter: Ignore White & Dark Colors**
-    if max(avg_color) >= BRIGHTNESS_THRESHOLD and not all(c > WHITE_THRESHOLD for c in avg_color):
-        new_color = {avg_color}
-    else:
-        new_color = set()
+    if previous_frame is None:
+        previous_frame = pixels
+        return []  # No changes in the first frame
 
-    # Find new colors (compared to previous frame)
-    changed_colors = new_color - previous_frame_colors
-    previous_frame_colors = new_color  # Update for next frame
+    # Calculate difference between frames
+    diff = np.abs(pixels.astype(int) - previous_frame.astype(int))
 
-    return list(changed_colors)
+    # Update the previous frame
+    previous_frame = pixels
+
+    # Extract changed pixels (non-zero values)
+    changed_pixels = pixels[np.any(diff > 0, axis=-1)]
+
+    # Get unique colors from changed pixels
+    unique_colors = [tuple(map(int, color)) for color in np.unique(changed_pixels, axis=0)]
+
+    return unique_colors
 
 # **Display Colors in a Window**
 def show_colors(colors):
@@ -124,17 +125,17 @@ def show_colors(colors):
         end_x = start_x + section_width
         color_blocks[:, start_x:end_x] = (b, g, r)  # OpenCV uses BGR
 
-    cv2.imshow("New Bright Colors", color_blocks)
+    cv2.imshow("Changed Colors", color_blocks)
     cv2.waitKey(1)  # Refresh the window
 
-# **Stream New Colors to ESP32**
-print(" Streaming new bright colors to ESP32 in JSON format...")
+# **Stream Changed Colors to ESP32**
+print(" Streaming changed screen colors to ESP32 in JSON format...")
 while True:
-    colors = get_new_colors()
+    colors = get_changed_colors()
     
     if colors:
         # Convert to JSON format
-        json_data = json.dumps({"NewColors": colors})
+        json_data = json.dumps({"ChangedColors": colors})
 
         # Send data over serial
         if ser:
@@ -144,4 +145,4 @@ while True:
         # Show colors visually in a window
         show_colors(colors)
 
-    time.sleep(0.05)  # **Faster updates (20 FPS)**
+    time.sleep(0.05)  # **Fast updates (20 FPS)**
