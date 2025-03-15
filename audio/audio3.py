@@ -6,9 +6,21 @@ SAMPLERATE = 44100  # Standard audio rate
 CHUNK = 1024        # Buffer size
 DEVICE_INDEX = None  # Auto-detect default output device
 
-# Detect the default output device for WASAPI loopback
+# Detect WASAPI host API
+hostapis = sd.query_hostapis()
+wasapi_index = None
+for i, hostapi in enumerate(hostapis):
+    if "WASAPI" in hostapi["name"]:
+        wasapi_index = i
+        break
+
+if wasapi_index is None:
+    print("❌ WASAPI not available on this system!")
+    exit()
+
+# Find WASAPI output device
 devices = sd.query_devices()
-loopback_devices = [i for i, d in enumerate(devices) if "WASAPI" in d["hostapi"] and d["max_output_channels"] > 0]
+loopback_devices = [i for i, d in enumerate(devices) if d["hostapi"] == wasapi_index and d["max_output_channels"] > 0]
 
 if loopback_devices:
     DEVICE_INDEX = loopback_devices[0]
