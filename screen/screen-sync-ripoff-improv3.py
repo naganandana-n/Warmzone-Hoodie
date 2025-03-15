@@ -102,11 +102,14 @@ def get_screen_grid_colors():
         screenshot = sct.grab(screen_size)
         img = Image.fromarray(np.array(screenshot)).convert("RGB")
 
-        # **Reduce Color Enhancement**
+        # **Enhance Contrast Without Biasing Blue**
         enhancer = ImageEnhance.Color(img)
-        img = enhancer.enhance(1.5)
+        img = enhancer.enhance(1.2)  # Mild enhancement to avoid color suppression
 
         img_array = np.array(img)
+
+        # Convert to **LAB Color Space** for better color detection
+        img_lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
 
         box_width = width // GRID_COLS
         box_height = height // GRID_ROWS
@@ -117,10 +120,13 @@ def get_screen_grid_colors():
                 x1, y1 = col * box_width, row * box_height
                 x2, y2 = x1 + box_width, y1 + box_height
 
-                section = img_array[y1:y2, x1:x2]
+                section = img_lab[y1:y2, x1:x2]
 
                 # **Use Median Instead of Mean**
                 avg_color = np.median(section, axis=(0, 1)).astype(int)
+
+                # Convert back to RGB
+                avg_color = cv2.cvtColor(np.uint8([[avg_color]]), cv2.COLOR_LAB2RGB)[0][0]
 
                 r, g, b = avg_color[0].item(), avg_color[1].item(), avg_color[2].item()
                 grid_colors.append({"R": r, "G": g, "B": b})
@@ -135,7 +141,7 @@ def get_most_distinct_colors(colors, num_colors=NUM_DISTINCT_COLORS):
     color_array = np.array([[c["R"], c["G"], c["B"]] for c in colors])
 
     # **Boost Reds & Oranges**
-    weights = np.array([1.3, 1.0, 0.9])
+    weights = np.array([1.5, 1.0, 0.7])  # Stronger red/orange preference
     weighted_colors = color_array * weights
 
     dist_matrix = distance.cdist(weighted_colors, weighted_colors, metric="euclidean")
@@ -143,6 +149,30 @@ def get_most_distinct_colors(colors, num_colors=NUM_DISTINCT_COLORS):
 
     top_indices = np.argsort(distinct_scores)[-num_colors:]
     return [colors[i] for i in top_indices]
+
+# **Display Colors in a Window**
+def show_grid_colors(colors):
+    if not colors:
+        return
+
+    rows, cols = GRID_ROWS, GRID_COLS
+    block_size = 40  
+    img_height = rows * block_size
+    img_width = cols * block_size
+
+    color_grid = np.zeros((img_height, img_width, 3), dtype=np.uint8)
+
+    for row in range(rows):
+        for col in range(cols):
+            idx = row * cols + col
+            r, g, b = colors[idx]["R"], colors[idx]["G"], colors[idx]["B"]
+            x1, y1 = col * block_size, row * block_size
+            x2, y2 = x1 + block_size, y1 + block_size
+
+            color_grid[y1:y2, x1:x2] = (b, g, r)
+
+    cv2.imshow("Detected Grid Colors", color_grid)
+    cv2.waitKey(1)
 
 # **Stream Colors**
 while True:
@@ -153,4 +183,5 @@ while True:
     if ser:
         ser.write(f"{json_data}\n".encode())
 
+    show_grid_colors(colors)
     time.sleep(UPDATE_INTERVAL)
