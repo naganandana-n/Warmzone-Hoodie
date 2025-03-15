@@ -1,30 +1,45 @@
 import sounddevice as sd
+import numpy as np
 
-# Get all host APIs
-hostapis = sd.query_hostapis()
+# Use VB-Audio Virtual Cable as the input device
+DEVICE_NAME = "CABLE Output"  # This is the name of VB-Audio Virtual Cable's output
+SAMPLERATE = 44100  # Standard sample rate
+CHUNK = 1024  # Buffer size
 
-# Find the index for WASAPI
-wasapi_index = None
-for i, api in enumerate(hostapis):
-    if "WASAPI" in api["name"]:  # Check if WASAPI exists
-        wasapi_index = i
-        break
+# Find the index of VB-Audio Virtual Cable
+def get_virtual_cable_index():
+    devices = sd.query_devices()
+    for i, device in enumerate(devices):
+        if DEVICE_NAME in device["name"] and device["max_input_channels"] > 0:
+            return i
+    return None
 
-if wasapi_index is None:
-    print("❌ WASAPI not found on this system!")
-    exit()
+DEVICE_INDEX = get_virtual_cable_index()
 
-# Get all devices
-devices = sd.query_devices()
+if DEVICE_INDEX is None:
+    print("❌ VB-Audio Virtual Cable not found. Ensure it's installed and set as default.")
+    exit(1)
 
-# Find a valid loopback device
-loopback_devices = [
-    i for i, d in enumerate(devices) if d["hostapi"] == wasapi_index and d["max_input_channels"] > 0
-]
+print(f"🎤 Using device: {DEVICE_NAME} (Index: {DEVICE_INDEX})")
 
-if loopback_devices:
-    DEVICE_INDEX = loopback_devices[0]  # Select the first available loopback device
-    print(f"🎧 Using WASAPI Loopback Device: {devices[DEVICE_INDEX]['name']}")
-else:
-    print("❌ No WASAPI loopback device found!")
-    exit()
+def get_audio_intensity(indata, frames, time, status):
+    """Processes system audio input and calculates intensity."""
+    if status:
+        print(status)
+    # Compute RMS (Root Mean Square) for loudness detection
+    intensity = np.sqrt(np.mean(indata**2))
+    
+    # Normalize intensity to a 0-5 scale
+    MAX_INTENSITY = 0.3  # Adjust based on real-world testing
+    scaled_intensity = min(5, max(0, (intensity / MAX_INTENSITY) * 5))
+    
+    print(f"🎶 Audio Intensity: {round(scaled_intensity, 2)}/5")
+
+# Start streaming audio from VB-Audio Virtual Cable
+try:
+    with sd.InputStream(device=DEVICE_INDEX, channels=1, samplerate=SAMPLERATE, callback=get_audio_intensity):
+        print("🎵 Streaming system audio intensity... Press Ctrl+C to stop.")
+        while True:
+            sd.sleep(100)
+except Exception as e:
+    print(f"❌ Error: {e}")
