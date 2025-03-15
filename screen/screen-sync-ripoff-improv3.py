@@ -147,8 +147,8 @@ def show_grid_colors(colors):
             x1, y1 = col * block_size, row * block_size
             x2, y2 = x1 + block_size, y1 + block_size
 
-            # OpenCV uses BGR, so swap Red & Green
-            color_grid[y1:y2, x1:x2] = (g, r, b)
+            # OpenCV uses BGR, so swap Red & Blue
+            color_grid[y1:y2, x1:x2] = (r, g, b)
 
     cv2.imshow("Detected Grid Colors", color_grid)
     cv2.waitKey(1)
@@ -158,9 +158,9 @@ while True:
     colors = get_screen_grid_colors()
     distinct_colors = get_most_distinct_colors(colors)
 
-    # Fix RGB/BGR issue by swapping **Red & Green**
+    # Fix RGB/BGR issue by swapping **Red & Blue**
     for color in distinct_colors:
-        color["R"], color["G"] = color["G"], color["R"]  # Swap Red & Green
+        color["R"], color["B"] = color["B"], color["R"]  # Swap Red & Blue
 
     json_data = json.dumps({"LEDColors": distinct_colors})
 
