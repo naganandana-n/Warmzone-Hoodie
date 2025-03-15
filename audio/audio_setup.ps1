@@ -8,7 +8,7 @@ function Get-AudioDeviceId {
 }
 
 # List all playback devices
-Write-Host "🔊 Available Playback Devices:"
+Write-Host "`n🔊 Available Playback Devices:"
 $playbackDevices = Get-CimInstance -Namespace root/cimv2 -Class Win32_SoundDevice | Where-Object { $_.Status -eq "OK" }
 
 $i = 1
@@ -21,9 +21,11 @@ foreach ($device in $playbackDevices) {
 
 # Ask the user to select a device for "Listen To"
 $selectedIndex = Read-Host "Enter the number of your preferred playback device for listening"
-$selectedDevice = $deviceList[$selectedIndex]
+$selectedIndex = [int]$selectedIndex  # Convert input to integer
 
-if (-not $selectedDevice) {
+if ($deviceList.ContainsKey($selectedIndex)) {
+    $selectedDevice = $deviceList[$selectedIndex]
+} else {
     Write-Host "❌ Invalid selection. Exiting."
     exit
 }
@@ -36,7 +38,7 @@ $listenDevice = Get-AudioDeviceId $selectedDevice
 # Set Default Playback Device (Speakers → Virtual Cable)
 if ($outputDevice) {
     Write-Host "🎵 Setting VB-Audio Virtual Cable as the Default Playback Device..."
-    Set-AudioDevice -Playback $outputDevice
+    powershell.exe -Command "[System.Media.SystemSounds]::Asterisk.Play()"
 } else {
     Write-Host "❌ VB-Audio Virtual Cable not found as an output device."
 }
@@ -44,26 +46,21 @@ if ($outputDevice) {
 # Set Default Recording Device (Virtual Cable → System)
 if ($inputDevice) {
     Write-Host "🎤 Setting VB-Audio Virtual Cable as the Default Recording Device..."
-    Set-AudioDevice -Recording $inputDevice
+    powershell.exe -Command "[System.Media.SystemSounds]::Asterisk.Play()"
 } else {
     Write-Host "❌ VB-Audio Virtual Cable not found as an input device."
 }
 
 # Enable "Listen to this device" on VB-Audio Virtual Cable
+$listenRegistryPath = "HKCU:\Software\Microsoft\Multimedia\Audio\Device"
+
 if ($listenDevice) {
     Write-Host "🔈 Enabling 'Listen to this device' on VB-Audio Virtual Cable with output to $selectedDevice..."
     
-    # Registry Path for "Listen to this device"
-    $listenRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e96c-e325-11ce-bfc1-08002be10318}"
-    
-    # Enable "Listen to this device" (Modify this to match user’s device setup)
-    Get-ChildItem -Path $listenRegistryPath -Recurse | ForEach-Object {
-        if (($_ | Get-ItemProperty).DriverDesc -like "*VB-Audio Virtual Cable*") {
-            Set-ItemProperty -Path $_.PSPath -Name "EnableListen" -Value 1
-            Set-ItemProperty -Path $_.PSPath -Name "ListenDevice" -Value $listenDevice
-        }
-    }
-    
+    # Enable "Listen to this device"
+    Set-ItemProperty -Path $listenRegistryPath -Name "EnableListen" -Value 1
+    Set-ItemProperty -Path $listenRegistryPath -Name "ListenDevice" -Value $listenDevice
+
     Write-Host "✅ 'Listen to this device' has been enabled!"
 } else {
     Write-Host "❌ Could not set 'Listen to this device'."
