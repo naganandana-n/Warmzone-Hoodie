@@ -1,3 +1,5 @@
+# working audio test - needs to be refined
+
 import sounddevice as sd
 import numpy as np
 import serial
