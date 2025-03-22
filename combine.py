@@ -281,7 +281,8 @@ mouse_listener = mouse.Listener(on_move=on_move)
 mouse_listener.start()
 
 def calculate_mouse_speed():
-    global smoothed_speed
+    global smoothed_speed, last_update_time
+
     if len(positions) < 2:
         return smoothed_speed
 
@@ -295,9 +296,18 @@ def calculate_mouse_speed():
             distances.append(distance / dt)
 
     avg_speed = np.mean(distances) if distances else 0
-    smoothed_speed = (EMA_ALPHA * avg_speed) + ((1 - EMA_ALPHA) * smoothed_speed)
 
-    return round(smoothed_speed, 2)
+    # ✅ **Fix: Scale speed back to 0-5 range**
+    scaled_speed = min(5, max(0, (avg_speed / MAX_SPEED) * 5))
+
+    # ✅ **Fix: Use smoothing filter**
+    smoothed_speed = (EMA_ALPHA * scaled_speed) + ((1 - EMA_ALPHA) * smoothed_speed)
+
+    # ✅ **Fix: Apply decay if no movement for 1 second**
+    if time.time() - last_update_time > 1.0:
+        smoothed_speed *= 0.9  # Gradually reduce speed if idle
+
+    return round(smoothed_speed, 2)  # ✅ **Fix: Keep values in expected range**
 
 # **🎵 Audio Processing**
 DEVICE_INDEX = None
