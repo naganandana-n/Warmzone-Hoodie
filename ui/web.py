@@ -4,7 +4,7 @@ import threading
 import webbrowser
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")  # ✅ Fix async issue
 
 # Global feature states
 features = {
