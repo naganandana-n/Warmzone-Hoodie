@@ -207,7 +207,6 @@ if __name__ == "__main__":
     main_thread.join()
 
 '''
-
 import time
 import json
 import threading
@@ -226,7 +225,7 @@ from scipy.spatial import distance
 # **🔹 Control Variables**
 stop_event = threading.Event()
 serial_queue = Queue()
-SERIAL_WRITE_DELAY = 0.2  # Limit ESP32 data rate to every 200ms
+SERIAL_WRITE_DELAY = 0.1  # Adjust sending rate
 
 # **📡 Find Available Serial Port**
 def find_serial_port():
@@ -254,7 +253,7 @@ ser = None
 if SERIAL_PORT:
     try:
         ser = serial.Serial(SERIAL_PORT, 115200, timeout=1)
-        ser.flush()  # Clear any previous data
+        ser.flush()  # Clear previous data
         time.sleep(2)
         print(f"✅ Connected to ESP32 on {SERIAL_PORT}")
     except serial.SerialException:
@@ -262,28 +261,19 @@ if SERIAL_PORT:
         ser = None
 
 # **📌 Mouse Tracking**
-positions, timestamps, velocities = [], [], []
-MAX_SPEED = 5000
-HISTORY_SIZE = 100
-DECAY_TIME = 200
-EMA_ALPHA = 0.1
-ACCELERATION_WEIGHT = 1.0
-ACCELERATION_LIMIT = 200
-RAMP_UP_SPEED = 0.5
-DECAY_START_TIME = 60
+positions, timestamps = [], []
 smoothed_speed = 0
+EMA_ALPHA = 0.1
 last_update_time = time.time()
 
 def on_move(x, y):
-    global positions, timestamps, velocities, last_update_time
+    global positions, timestamps, last_update_time
     positions.append((x, y))
     timestamps.append(time.time())
 
-    if len(positions) > HISTORY_SIZE:
+    if len(positions) > 100:
         positions.pop(0)
         timestamps.pop(0)
-        if velocities:
-            velocities.pop(0)
 
     last_update_time = time.time()
 
@@ -302,16 +292,10 @@ def calculate_mouse_speed():
         distance = np.sqrt(dx**2 + dy**2)
         dt = timestamps[i] - timestamps[i - 1]
         if dt > 0:
-            speed = distance / dt
-            distances.append(speed)
+            distances.append(distance / dt)
 
     avg_speed = np.mean(distances) if distances else 0
-    scaled_speed = min(5, max(0, (avg_speed / MAX_SPEED) * 5))
-    smoothed_speed = (EMA_ALPHA * scaled_speed) + ((1 - EMA_ALPHA) * smoothed_speed)
-
-    if time.time() - last_update_time > DECAY_START_TIME:
-        decay_factor = max(0, 1 - ((time.time() - last_update_time - DECAY_START_TIME) / DECAY_TIME))
-        smoothed_speed *= decay_factor
+    smoothed_speed = (EMA_ALPHA * avg_speed) + ((1 - EMA_ALPHA) * smoothed_speed)
 
     return round(smoothed_speed, 2)
 
@@ -319,27 +303,25 @@ def calculate_mouse_speed():
 DEVICE_INDEX = None
 SAMPLERATE = 44100
 MAX_INTENSITY = 0.3
-ROLLING_WINDOW = 10
-intensity_buffer = deque(maxlen=ROLLING_WINDOW)
+intensity_buffer = deque(maxlen=10)
+audio_brightness = 0
 
 def get_audio_intensity(indata, frames, time, status):
+    """Process audio intensity and update brightness."""
+    global audio_brightness
     intensity = np.sqrt(np.mean(indata**2))
     brightness = min(255, max(0, int((intensity / MAX_INTENSITY) * 255)))
     intensity_buffer.append(brightness)
-    avg_brightness = int(np.mean(intensity_buffer))
-
-    json_data = json.dumps({"AudioIntensity": avg_brightness})
-    print(f"📡 Sending: {json_data}")  # Debug print
-    serial_queue.put(json_data)
+    audio_brightness = int(np.mean(intensity_buffer))
 
 # **🎨 Screen Color Processing**
 GRID_ROWS, GRID_COLS = 10, 10
-UPDATE_INTERVAL = 0.1
-NUM_DISTINCT_COLORS = 6
 BRIGHTNESS_THRESHOLD = 60
+NUM_DISTINCT_COLORS = 6
 COLOR_SIMILARITY_THRESHOLD = 80
 
 def get_screen_grid_colors():
+    """Capture screen colors and extract dominant ones."""
     with mss.mss() as sct:
         screen = sct.grab(sct.monitors[1])
         img = np.array(screen)
@@ -367,53 +349,63 @@ def get_screen_grid_colors():
 
         return grid_colors[:NUM_DISTINCT_COLORS]
 
-def screen_loop():
-    last_sent_colors = None  # Store last sent colors
+# **📡 Send Data at the Same Rate**
+def send_data():
+    """Send merged JSON data for screen, audio, and mouse updates together."""
+    last_sent_data = None  # Store last sent data to avoid redundancy
+
     while not stop_event.is_set():
+        # **Collect latest data**
         colors = get_screen_grid_colors()
+        mouse_speed = calculate_mouse_speed()
 
-        if colors and colors != last_sent_colors:  # Only send if new colors detected
-            json_data = json.dumps({"LEDColors": colors})
-            print(f"📡 Sending to ESP32: {json_data}")  # Debug print
-            serial_queue.put(json_data)
-            last_sent_colors = colors  # Store last sent colors
+        json_data = {
+            "LEDColors": colors,
+            "Brightness": audio_brightness,
+            "MouseSpeed": mouse_speed
+        }
 
-        time.sleep(UPDATE_INTERVAL)
+        # **Send only if data has changed**
+        if json_data != last_sent_data:
+            json_str = json.dumps(json_data)
+            serial_queue.put(json_str)
+            print(f"📡 Sending: {json_str}")  # Debug print
+            last_sent_data = json_data  # Store for next comparison
+
+        time.sleep(SERIAL_WRITE_DELAY)
 
 # **📡 Serial Write Thread**
 def serial_write_loop():
+    """Continuously send data to ESP32 at a controlled rate."""
     while not stop_event.is_set():
         try:
-            json_data = serial_queue.get(timeout=0.5)  # Get data from queue
+            json_data = serial_queue.get(timeout=0.5)
             if ser:
                 ser.write(f"{json_data}\n".encode())  # Send to ESP32
                 print(f"✅ Data sent: {json_data}")  # Confirm data sent
-                time.sleep(SERIAL_WRITE_DELAY)  # Prevent data flood
+                time.sleep(SERIAL_WRITE_DELAY)  # Prevent overflow
         except Empty:
-            continue  # No data, just continue loop
+            continue
         except serial.SerialTimeoutException:
             print("❌ Serial write timeout, skipping data")
 
 # **🔹 Run All Features in Parallel**
 def main_loop():
+    """Main loop to process audio and start screen, mouse, and serial threads."""
     try:
         with sd.InputStream(device=DEVICE_INDEX, channels=1, samplerate=SAMPLERATE, callback=get_audio_intensity):
-            threading.Thread(target=screen_loop, daemon=True).start()
+            threading.Thread(target=send_data, daemon=True).start()
             threading.Thread(target=serial_write_loop, daemon=True).start()
 
             while not stop_event.is_set():
-                mouse_speed = calculate_mouse_speed()
-                json_data = json.dumps({"MouseSpeed": mouse_speed})
-                print(f"📡 Sending: {json_data}")  # Debug print
-                serial_queue.put(json_data)
+                time.sleep(0.05)  # Maintain loop timing
 
-                time.sleep(0.2)
     except KeyboardInterrupt:
         print("\n🚪 Exiting program... (Ctrl + C detected)")
         stop_event.set()
         if ser:
             ser.close()
-        time.sleep(1)  # Allow threads to exit
+        time.sleep(1)
         exit(0)
 
 # **🔹 Run the main function**
