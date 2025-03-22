@@ -368,12 +368,15 @@ def get_screen_grid_colors():
         return grid_colors[:NUM_DISTINCT_COLORS]
 
 def screen_loop():
+    last_sent_colors = None  # Store last sent colors
     while not stop_event.is_set():
         colors = get_screen_grid_colors()
 
-        json_data = json.dumps({"LEDColors": colors})
-        print(f"📡 Sending: {json_data}")  # Debug print
-        serial_queue.put(json_data)
+        if colors and colors != last_sent_colors:  # Only send if new colors detected
+            json_data = json.dumps({"LEDColors": colors})
+            print(f"📡 Sending to ESP32: {json_data}")  # Debug print
+            serial_queue.put(json_data)
+            last_sent_colors = colors  # Store last sent colors
 
         time.sleep(UPDATE_INTERVAL)
 
