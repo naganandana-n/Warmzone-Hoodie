@@ -408,25 +408,22 @@ def get_screen_grid_colors():
         return grid_colors[:NUM_DISTINCT_COLORS]
 
 def send_data():
-    """Send merged JSON data for screen, audio, and mouse updates together."""
-    last_sent_data = None  # Store last sent data to avoid redundancy
-
+    """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
     while not stop_event.is_set():
         # **Collect latest data**
         colors = get_screen_grid_colors()
         mouse_speed = calculate_scaled_speed()  # ✅ Use new function
+
         json_data = {
             "LEDColors": colors,
             "Brightness": audio_brightness,
             "MouseSpeed": mouse_speed
         }
 
-        # **Send only if data has changed**
-        if json_data != last_sent_data:
-            json_str = json.dumps(json_data)
-            serial_queue.put(json_str)
-            print(f"📡 Sending: {json_str}")  # Debug print
-            last_sent_data = json_data  # Store for next comparison
+        # **Send even if data hasn't changed**
+        json_str = json.dumps(json_data)
+        serial_queue.put(json_str)
+        print(f"📡 Sending: {json_str}")  # Debug print
 
         time.sleep(SERIAL_WRITE_DELAY)  # Maintain uniform sending rate
 
