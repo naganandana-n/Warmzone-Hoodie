@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Web UI</title>
+    <script>
+        function sendClick() {
+            fetch("/button_click").then(response => console.log("Button clicked"));
+        }
+    </script>
+</head>
+<body>
+    <h1>🚀 Flask Web UI</h1>
+    <button onclick="sendClick()">Click Me</button>
+</body>
+</html>
