@@ -254,6 +254,7 @@ ser = None
 if SERIAL_PORT:
     try:
         ser = serial.Serial(SERIAL_PORT, 115200, timeout=1)
+        ser.flush()  # Clear any previous data
         time.sleep(2)
         print(f"✅ Connected to ESP32 on {SERIAL_PORT}")
     except serial.SerialException:
@@ -328,7 +329,8 @@ def get_audio_intensity(indata, frames, time, status):
     avg_brightness = int(np.mean(intensity_buffer))
 
     json_data = json.dumps({"AudioIntensity": avg_brightness})
-    serial_queue.put(json_data)  # Add to queue instead of writing immediately
+    print(f"📡 Sending: {json_data}")  # Debug print
+    serial_queue.put(json_data)
 
 # **🎨 Screen Color Processing**
 GRID_ROWS, GRID_COLS = 10, 10
@@ -361,34 +363,16 @@ def get_screen_grid_colors():
                 brightness = np.sqrt(0.299 * (r**2) + 0.587 * (g**2) + 0.114 * (b**2))
 
                 if brightness > BRIGHTNESS_THRESHOLD:
-                    grid_colors.append({"R": r, "G": g, "B": b, "row": row, "col": col})
+                    grid_colors.append({"R": r, "G": g, "B": b})
 
-        return grid_colors
-
-def get_most_distinct_colors(colors):
-    if len(colors) <= NUM_DISTINCT_COLORS:
-        return colors
-
-    selected_colors = []
-    for color in colors:
-        if not any(
-            distance.euclidean([color["R"], color["G"], color["B"]], [c["R"], c["G"], c["B"]])
-            < COLOR_SIMILARITY_THRESHOLD
-            for c in selected_colors
-        ):
-            selected_colors.append(color)
-
-        if len(selected_colors) >= NUM_DISTINCT_COLORS:
-            break
-
-    return selected_colors
+        return grid_colors[:NUM_DISTINCT_COLORS]
 
 def screen_loop():
     while not stop_event.is_set():
         colors = get_screen_grid_colors()
-        distinct_colors = get_most_distinct_colors(colors)
 
-        json_data = json.dumps({"LEDColors": distinct_colors})
+        json_data = json.dumps({"LEDColors": colors})
+        print(f"📡 Sending: {json_data}")  # Debug print
         serial_queue.put(json_data)
 
         time.sleep(UPDATE_INTERVAL)
@@ -400,6 +384,7 @@ def serial_write_loop():
             json_data = serial_queue.get(timeout=0.5)  # Get data from queue
             if ser:
                 ser.write(f"{json_data}\n".encode())  # Send to ESP32
+                print(f"✅ Data sent: {json_data}")  # Confirm data sent
                 time.sleep(SERIAL_WRITE_DELAY)  # Prevent data flood
         except Empty:
             continue  # No data, just continue loop
@@ -416,15 +401,16 @@ def main_loop():
             while not stop_event.is_set():
                 mouse_speed = calculate_mouse_speed()
                 json_data = json.dumps({"MouseSpeed": mouse_speed})
+                print(f"📡 Sending: {json_data}")  # Debug print
                 serial_queue.put(json_data)
 
-                time.sleep(0.1)
+                time.sleep(0.2)
     except KeyboardInterrupt:
         print("\n🚪 Exiting program... (Ctrl + C detected)")
         stop_event.set()
         if ser:
             ser.close()
-        time.sleep(0.5)  # Let threads exit
+        time.sleep(1)  # Allow threads to exit
         exit(0)
 
 # **🔹 Run the main function**
