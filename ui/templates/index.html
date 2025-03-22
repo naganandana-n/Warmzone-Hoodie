@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flask Web UI</title>
-    <script>
-        function sendClick() {
-            fetch("/button_click").then(response => console.log("Button clicked"));
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 </head>
 <body>
-    <h1>🚀 Flask Web UI</h1>
-    <button onclick="sendClick()">Click Me</button>
+    <h1>Flask Web UI</h1>
+    <button onclick="sendMessage()">Click Me</button>
+
+    <script>
+        var socket = io();
+
+        function sendMessage() {
+            socket.emit("button_clicked");
+            console.log("🔘 Button Clicked!");
+        }
+    </script>
 </body>
 </html>

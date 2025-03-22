@@ -1,20 +1,9 @@
 import subprocess
-import os
 import sys
 
-# Locate the web.py script
-web_script = os.path.join(os.path.dirname(__file__), "web.py")
-
-if not os.path.exists(web_script):
-    print(f"❌ ERROR: web.py not found at {web_script}")
-    sys.exit(1)
-
+# **Run `web.py` using Python**
 try:
-    print(f"🚀 Launching web.py from {web_script}...")
-    
-    # Run web.py with the default Python interpreter
-    subprocess.Popen(["python", web_script], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-    print("✅ Web server should be running!")
+    print("🚀 [INFO] Launching Web Server...")
+    subprocess.Popen([sys.executable, "web.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
 except Exception as e:
-    print(f"❌ ERROR: {e}")
+    print(f"❌ [ERROR] Failed to launch web.py: {e}")
