@@ -17,8 +17,10 @@ if not os.path.exists(script_path):
     input("Press Enter to exit...")
     sys.exit(1)
 
-# ✅ Open a new terminal and run `web.py`
+# ✅ Open a new terminal and run `web.py`, logging any errors
 subprocess.Popen(
-    ["start", "cmd", "/k", f"cd /d {base_dir} && python web.py"],
+    ["cmd", "/k", f"cd /d {base_dir} && python web.py"],
     shell=True
 )
+
+print(f"✅ Running web.py from {script_path}")
