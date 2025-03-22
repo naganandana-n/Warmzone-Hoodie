@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Web UI</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <title>Nana Warm Zone</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script src="/static/script.js" defer></script>
 </head>
 <body>
-    <h1>Flask Web UI</h1>
-    <button onclick="sendMessage()">Click Me</button>
+    <div class="container">
+        <h1>🔥 Nana Warm Zone 🔥</h1>
 
-    <script>
-        var socket = io();
+        <!-- Feature Control Buttons -->
+        <button id="audio-btn">Audio: ON</button>
+        <button id="screen-btn">Screen: ON</button>
+        <button id="mouse-btn">Mouse: ON</button>
 
-        function sendMessage() {
-            socket.emit("button_clicked");
-            console.log("🔘 Button Clicked!");
-        }
-    </script>
+        <!-- Heater Buttons (Hidden Initially) -->
+        <div id="heater-controls" style="display: none;">
+            <button id="heater-1">Heater 1: OFF</button>
+            <button id="heater-2">Heater 2: OFF</button>
+            <button id="heater-3">Heater 3: OFF</button>
+        </div>
+    </div>
 </body>
 </html>

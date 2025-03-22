@@ -1,3 +1,5 @@
+# pyinstaller --onefile --add-data "templates; templates" --hidden-import flask launcher.py
+
 import os
 import sys
 
