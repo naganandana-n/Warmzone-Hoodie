@@ -2,8 +2,8 @@ import subprocess
 import sys
 import os
 
-# ✅ Get the current directory where the EXE is running
-if getattr(sys, 'frozen', False):  # When running as an EXE
+# ✅ Get the current directory where `launcher.exe` is running
+if getattr(sys, 'frozen', False):  # Running as an EXE
     base_dir = os.path.dirname(sys.executable)
 else:
     base_dir = os.path.dirname(__file__)
@@ -17,8 +17,8 @@ if not os.path.exists(script_path):
     input("Press Enter to exit...")
     sys.exit(1)
 
-# ✅ Get the Python interpreter being used
-python_executable = sys.executable  
-
-# ✅ Launch `web.py` in a new terminal
-subprocess.Popen([python_executable, script_path], creationflags=subprocess.CREATE_NEW_CONSOLE)
+# ✅ Open a new terminal and run `web.py` in the same directory
+subprocess.Popen(
+    ["cmd.exe", "/K", f"cd /d {base_dir} && python web.py"],
+    creationflags=subprocess.CREATE_NEW_CONSOLE
+)
