@@ -2,58 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nana Warmzone Controller</title>
   <style>
+    :root {
+      --bg: #f5f5f5;
+      --text: #333;
+      --card: white;
+      --slider-bg: #ccc;
+      --header-bg: #E22DA1;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #fff;
+      --card: #1e1e1e;
+      --slider-bg: #444;
+    }
+
     body {
       margin: 0;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f5f5;
-      color: #333;
-      transition: background-color 0.3s, color 0.3s;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: 0.3s;
     }
 
     .header {
-      background-color: #E22DA1;
+      background-color: var(--header-bg);
       padding: 1rem;
       color: white;
       font-size: 1.5rem;
       font-weight: bold;
       display: flex;
       justify-content: center;
+      align-items: center;
       position: relative;
-    }
-
-    .dark-mode .header {
-      background-color: #8c1e6d;
     }
 
     .dark-toggle {
       position: absolute;
       right: 1rem;
-      top: 1rem;
-      background: transparent;
+      background: none;
       border: none;
       color: white;
-      font-weight: bold;
       font-size: 1rem;
+      font-weight: bold;
       cursor: pointer;
     }
 
     .container {
       max-width: 500px;
       margin: 2rem auto;
-      background-color: white;
+      background-color: var(--card);
       padding: 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    .dark-mode .container {
-      background-color: #222;
-      color: white;
-      box-shadow: 0 4px 12px rgba(255,255,255,0.1);
     }
 
     .feature {
@@ -70,6 +74,7 @@
     .slider {
       width: 150px;
       margin-left: 1rem;
+      accent-color: #E22DA1;
     }
 
     .toggle {
@@ -92,7 +97,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #ccc;
+      background-color: var(--slider-bg);
       transition: 0.4s;
       border-radius: 34px;
     }
@@ -162,7 +167,7 @@
       <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
     </div>
 
-    <!-- Heaters -->
+    <!-- Heaters (Only if mouse is off) -->
     <div id="heaterControls" class="sub-feature hidden">
       <div class="feature">
         <span>Heater 1</span>
@@ -201,9 +206,6 @@
     const mouseToggle = document.getElementById("mouseToggle");
     const sensitivitySlider = document.getElementById("sensitivitySlider");
     const heaterControls = document.getElementById("heaterControls");
-    const vibrationToggle = document.getElementById("vibrationToggle");
-    const syncAudio = document.getElementById("syncAudio");
-    const darkToggle = document.getElementById("darkModeToggle");
 
     mouseToggle.addEventListener("change", () => {
       if (mouseToggle.checked) {
@@ -215,13 +217,17 @@
       }
     });
 
+    const vibrationToggle = document.getElementById("vibrationToggle");
+    const syncAudio = document.getElementById("syncAudio");
+
     vibrationToggle.addEventListener("change", () => {
       syncAudio.classList.toggle("hidden", !vibrationToggle.checked);
     });
 
+    const darkToggle = document.getElementById("darkModeToggle");
     darkToggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark-mode");
-      darkToggle.textContent = document.body.classList.contains("dark-mode") ? "Light" : "Dark";
+      document.body.classList.toggle("dark");
+      darkToggle.textContent = document.body.classList.contains("dark") ? "Light" : "Dark";
     });
   </script>
 </body>
