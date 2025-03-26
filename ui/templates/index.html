@@ -1,72 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Nana WarmZone Controller</title>
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nana Warmzone Controller</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background-color: #f4f6f8;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
     }
 
-    /* Header Bar */
     .header {
-      background: linear-gradient(to right, white 20%, #E22DA1 40%, #E22DA1 100%);
-      padding: 20px 30px;
+      background-color: #E22DA1;
+      padding: 1rem;
+      text-align: center;
       color: white;
-      font-size: 24px;
+      font-size: 1.5rem;
       font-weight: bold;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .container {
-      padding: 30px;
-      max-width: 600px;
-      margin: auto;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      margin-bottom: 20px;
+      max-width: 500px;
+      margin: 2rem auto;
+      background-color: white;
+      padding: 2rem;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .card h2 {
-      margin-top: 0;
-    }
-
-    .toggle-row {
+    .feature {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
+      margin: 1rem 0;
     }
 
     .slider {
-      -webkit-appearance: none;
-      width: 150px;
-      height: 5px;
-      border-radius: 5px;
-      background: #ccc;
-      outline: none;
+      width: 100%;
+      margin-top: 0.5rem;
     }
 
-    .toggle-switch {
+    .toggle {
       position: relative;
+      display: inline-block;
       width: 50px;
       height: 28px;
     }
 
-    .toggle-switch input {
+    .toggle input {
       opacity: 0;
       width: 0;
       height: 0;
     }
 
-    .slider-toggle {
+    .slider-round {
       position: absolute;
       cursor: pointer;
       top: 0;
@@ -74,11 +64,11 @@
       right: 0;
       bottom: 0;
       background-color: #ccc;
+      transition: 0.4s;
       border-radius: 34px;
-      transition: .4s;
     }
 
-    .slider-toggle:before {
+    .slider-round:before {
       position: absolute;
       content: "";
       height: 22px;
@@ -86,100 +76,112 @@
       left: 3px;
       bottom: 3px;
       background-color: white;
+      transition: 0.4s;
       border-radius: 50%;
-      transition: .4s;
     }
 
-    .toggle-switch input:checked + .slider-toggle {
+    input:checked + .slider-round {
       background-color: #E22DA1;
     }
 
-    .toggle-switch input:checked + .slider-toggle:before {
+    input:checked + .slider-round:before {
       transform: translateX(22px);
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="header">Nana WarmZone Controller</div>
+  <div class="header">Nana Warmzone Controller</div>
   <div class="container">
+    <div class="feature">
+      <span>Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="audioToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-    <div class="card">
-      <h2>Core Features</h2>
-      <div class="toggle-row">
-        <label>🔊 Audio</label>
-        <label class="toggle-switch">
-          <input type="checkbox" onchange="toggle('audio')">
-          <span class="slider-toggle"></span>
-        </label>
+    <div class="feature">
+      <span>Screen</span>
+      <label class="toggle">
+        <input type="checkbox" id="screenToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
+
+    <div class="feature">
+      <span>Mouse</span>
+      <label class="toggle">
+        <input type="checkbox" id="mouseToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
+
+    <div id="sensitivitySlider" class="feature">
+      <span>Sensitivity</span>
+      <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+    </div>
+
+    <div id="heaterControls" class="hidden">
+      <div class="feature">
+        <span>Heater 1</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
       </div>
-
-      <div class="toggle-row">
-        <label>🖥 Screen</label>
-        <label class="toggle-switch">
-          <input type="checkbox" onchange="toggle('screen')">
-          <span class="slider-toggle"></span>
-        </label>
+      <div class="feature">
+        <span>Heater 2</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
       </div>
-
-      <div class="toggle-row">
-        <label>🖱 Mouse</label>
-        <label class="toggle-switch">
-          <input type="checkbox" onchange="toggle('mouse')">
-          <span class="slider-toggle"></span>
-        </label>
-      </div>
-
-      <div id="mouse-settings">
-        <div class="toggle-row">
-          <label>Sensitivity</label>
-          <input type="range" min="0" max="5" value="3" class="slider" onchange="sendValue('sensitivity', this.value)">
-        </div>
-
-        <div class="toggle-row">
-          <label>Heater 1</label>
-          <input type="range" min="1" max="3" value="1" class="slider" onchange="sendValue('heater1', this.value)">
-        </div>
-
-        <div class="toggle-row">
-          <label>Heater 2</label>
-          <input type="range" min="1" max="3" value="1" class="slider" onchange="sendValue('heater2', this.value)">
-        </div>
-
-        <div class="toggle-row">
-          <label>Heater 3</label>
-          <input type="range" min="1" max="3" value="1" class="slider" onchange="sendValue('heater3', this.value)">
-        </div>
+      <div class="feature">
+        <span>Heater 3</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
       </div>
     </div>
 
-    <div class="card">
-      <h2>Vibration</h2>
-      <div class="toggle-row">
-        <label>🌀 Vibration</label>
-        <label class="toggle-switch">
-          <input type="checkbox" onchange="toggle('vibration')">
-          <span class="slider-toggle"></span>
-        </label>
-      </div>
+    <div class="feature">
+      <span>Vibration</span>
+      <label class="toggle">
+        <input type="checkbox" id="vibrationToggle" />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-      <div class="toggle-row">
-        <label>🎶 Sync with Audio</label>
-        <label class="toggle-switch">
-          <input type="checkbox" onchange="toggle('sync_with_audio')">
-          <span class="slider-toggle"></span>
-        </label>
-      </div>
+    <div id="syncAudio" class="feature hidden">
+      <span>Sync with Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="syncToggle" />
+        <span class="slider-round"></span>
+      </label>
     </div>
   </div>
 
   <script>
-    const socket = io();
-    function toggle(key) {
-      socket.emit("toggle", { key });
-    }
-    function sendValue(key, value) {
-      socket.emit("toggle", { key, value: parseInt(value) });
-    }
+    const mouseToggle = document.getElementById("mouseToggle");
+    const sensitivitySlider = document.getElementById("sensitivitySlider");
+    const heaterControls = document.getElementById("heaterControls");
+
+    mouseToggle.addEventListener("change", () => {
+      if (mouseToggle.checked) {
+        sensitivitySlider.classList.remove("hidden");
+        heaterControls.classList.add("hidden");
+      } else {
+        sensitivitySlider.classList.add("hidden");
+        heaterControls.classList.remove("hidden");
+      }
+    });
+
+    const vibrationToggle = document.getElementById("vibrationToggle");
+    const syncAudio = document.getElementById("syncAudio");
+
+    vibrationToggle.addEventListener("change", () => {
+      if (vibrationToggle.checked) {
+        syncAudio.classList.remove("hidden");
+      } else {
+        syncAudio.classList.add("hidden");
+      }
+    });
   </script>
 </body>
 </html>
