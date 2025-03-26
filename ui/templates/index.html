@@ -1,28 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nana Warm Zone</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
-    <script src="/static/script.js" defer></script>
+  <title>Nana WarmZone Web UI</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+    h2 { margin-top: 30px; }
+    .toggle { margin-bottom: 10px; }
+    label { display: inline-block; width: 150px; }
+    input[type="range"] { width: 150px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔥 Nana Warm Zone 🔥</h1>
+  <h1>Nana WarmZone Controller</h1>
 
-        <!-- Feature Control Buttons -->
-        <button id="audio-btn">Audio: ON</button>
-        <button id="screen-btn">Screen: ON</button>
-        <button id="mouse-btn">Mouse: ON</button>
+  <div class="toggle">
+    <label>🔊 Audio</label>
+    <button onclick="toggle('audio')">Toggle</button>
+  </div>
 
-        <!-- Heater Buttons (Hidden Initially) -->
-        <div id="heater-controls" style="display: none;">
-            <button id="heater-1">Heater 1: OFF</button>
-            <button id="heater-2">Heater 2: OFF</button>
-            <button id="heater-3">Heater 3: OFF</button>
-        </div>
-    </div>
+  <div class="toggle">
+    <label>🖥 Screen</label>
+    <button onclick="toggle('screen')">Toggle</button>
+  </div>
+
+  <div class="toggle">
+    <label>🖱 Mouse</label>
+    <button onclick="toggle('mouse')">Toggle</button>
+  </div>
+
+  <div id="mouse-controls" style="margin-left:20px; display:block;">
+    <label>Sensitivity</label>
+    <input type="range" min="0" max="5" value="3" oninput="sendValue('sensitivity', this.value)">
+    <br><br>
+    <label>🔥 Heater 1</label>
+    <input type="range" min="1" max="3" value="1" oninput="sendValue('heater1', this.value)">
+    <br>
+    <label>🔥 Heater 2</label>
+    <input type="range" min="1" max="3" value="1" oninput="sendValue('heater2', this.value)">
+    <br>
+    <label>🔥 Heater 3</label>
+    <input type="range" min="1" max="3" value="1" oninput="sendValue('heater3', this.value)">
+  </div>
+
+  <h2>Vibration</h2>
+  <div class="toggle">
+    <label>🌀 Vibration</label>
+    <button onclick="toggle('vibration')">Toggle</button>
+  </div>
+
+  <div class="toggle" style="margin-left:20px;">
+    <label>🎶 Sync with Audio</label>
+    <button onclick="toggle('sync_with_audio')">Toggle</button>
+  </div>
+
+  <script>
+    const socket = io();
+
+    function toggle(key) {
+      socket.emit("toggle", { key });
+    }
+
+    function sendValue(key, value) {
+      socket.emit("toggle", { key, value: parseInt(value) });
+    }
+  </script>
 </body>
 </html>

@@ -4,36 +4,38 @@ import threading
 import webbrowser
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")  # ✅ Fix async issue
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Global feature states
-features = {
+# Feature States
+state = {
     "audio": True,
     "screen": True,
     "mouse": True,
-    "heaters": [False, False, False]  # Heater 1, 2, 3 OFF initially
+    "sensitivity": 3,
+    "heaters": [1, 1, 1],
+    "vibration": False,
+    "sync_with_audio": False
 }
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", state=state)
 
-@socketio.on("toggle_feature")
-def toggle_feature(data):
-    feature = data["feature"]
-    if feature in features:
-        features[feature] = not features[feature]
-        print(f"🔄 {feature} Toggled: {features[feature]}")
-    elif feature.startswith("heater"):
-        idx = int(feature[-1]) - 1  # Extract heater number
-        features["heaters"][idx] = not features["heaters"][idx]
-        print(f"🔥 Heater {idx+1} Toggled: {features['heaters'][idx]}")
+@socketio.on("toggle")
+def toggle(data):
+    key = data["key"]
+    if key in state:
+        state[key] = not state[key]
+    elif key.startswith("heater"):
+        idx = int(key[-1]) - 1
+        state["heaters"][idx] = data["value"]
+    elif key == "sensitivity":
+        state["sensitivity"] = data["value"]
+    print(f"🔄 Updated state: {state}")
 
-# **Open Browser Automatically**
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
-# **Run Flask Server**
 def run_server():
     threading.Thread(target=open_browser, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000)
