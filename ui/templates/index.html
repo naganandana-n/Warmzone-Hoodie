@@ -1,144 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nana Warmzone Controller</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    :root {
-      --purple: #E22DA1;
-      --bg-light: #ffffff;
-      --bg-dark: #1e1e1e;
-      --text-light: #ffffff;
-      --text-dark: #000000;
-    }
-
     body {
-      background-color: var(--bg-light);
-      color: var(--text-dark);
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    body.dark-mode {
-      background-color: var(--bg-dark);
-      color: var(--text-light);
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
     }
 
     .header {
-      background-color: var(--purple);
-      color: white;
+      background-color: #E22DA1;
       padding: 1rem;
       text-align: center;
-      position: relative;
-    }
-
-    .dark-toggle {
-      position: absolute;
-      right: 1rem;
-      top: 1rem;
-      background-color: white;
-      color: var(--purple);
-      border: none;
-      border-radius: 5px;
-      padding: 5px 10px;
+      color: white;
+      font-size: 1.5rem;
       font-weight: bold;
     }
 
-    .card {
-      background-color: #f8f9fa;
-      border: none;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      transition: background-color 0.3s;
+    .container {
+      max-width: 500px;
+      margin: 2rem auto;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    body.dark-mode .card {
-      background-color: #2c2c2c;
+    .feature {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 1rem 0;
     }
 
-    .form-check-input:checked {
-      background-color: var(--purple);
-      border-color: var(--purple);
+    .sub-feature {
+      margin-left: 1.5rem;
     }
 
-    .form-range::-webkit-slider-thumb {
-      background-color: var(--purple);
+    .slider {
+      width: 100%;
+      margin-top: 0.5rem;
     }
 
-    .form-range::-moz-range-thumb {
-      background-color: var(--purple);
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
     }
 
-    .form-range::-ms-thumb {
-      background-color: var(--purple);
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-round {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+
+    .slider-round:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider-round {
+      background-color: #E22DA1;
+    }
+
+    input:checked + .slider-round:before {
+      transform: translateX(22px);
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h3 class="m-0">Nana Warmzone Controller</h3>
-    <button class="dark-toggle" onclick="toggleDarkMode()">🌙</button>
-  </div>
+  <div class="header">Nana Warmzone Controller</div>
 
-  <div class="container mt-4">
-    <div class="card">
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="audioToggle" checked onchange="updateUI()">
-        <label class="form-check-label" for="audioToggle">Audio</label>
-      </div>
+  <div class="container">
+    <!-- Audio -->
+    <div class="feature">
+      <span>Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="audioToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="screenToggle" checked onchange="updateUI()">
-        <label class="form-check-label" for="screenToggle">Screen</label>
-      </div>
+    <!-- Screen -->
+    <div class="feature">
+      <span>Screen</span>
+      <label class="toggle">
+        <input type="checkbox" id="screenToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="mouseToggle" checked onchange="updateUI()">
-        <label class="form-check-label" for="mouseToggle">Mouse</label>
-      </div>
+    <!-- Mouse -->
+    <div class="feature">
+      <span>Mouse</span>
+      <label class="toggle">
+        <input type="checkbox" id="mouseToggle" checked />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-      <div id="sensitivityControl" class="mt-3">
-        <label for="sensitivitySlider" class="form-label">Mouse Sensitivity</label>
-        <input type="range" class="form-range" min="0" max="5" step="1" id="sensitivitySlider">
-      </div>
+    <!-- Mouse Sensitivity -->
+    <div id="sensitivitySlider" class="feature sub-feature">
+      <span>Sensitivity</span>
+      <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+    </div>
 
-      <div id="heaterControls" class="mt-3" style="display: none;">
-        <label class="form-label">Heaters</label>
-        <label for="heater1">Heater 1</label>
-        <input type="range" class="form-range" min="1" max="3" step="1" id="heater1">
-        <label for="heater2">Heater 2</label>
-        <input type="range" class="form-range" min="1" max="3" step="1" id="heater2">
-        <label for="heater3">Heater 3</label>
-        <input type="range" class="form-range" min="1" max="3" step="1" id="heater3">
+    <!-- Heaters (Only if mouse is off) -->
+    <div id="heaterControls" class="sub-feature hidden">
+      <div class="feature">
+        <span>Heater 1</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
       </div>
+      <div class="feature">
+        <span>Heater 2</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
+      </div>
+      <div class="feature">
+        <span>Heater 3</span>
+        <input type="range" min="1" max="3" value="1" class="slider" />
+      </div>
+    </div>
 
-      <div class="form-check form-switch mt-3">
-        <input class="form-check-input" type="checkbox" id="vibrationToggle" onchange="updateUI()">
-        <label class="form-check-label" for="vibrationToggle">Vibration</label>
-      </div>
+    <!-- Vibration -->
+    <div class="feature">
+      <span>Vibration</span>
+      <label class="toggle">
+        <input type="checkbox" id="vibrationToggle" />
+        <span class="slider-round"></span>
+      </label>
+    </div>
 
-      <div id="syncOption" class="form-check form-switch mt-2" style="display: none;">
-        <input class="form-check-input" type="checkbox" id="syncToggle">
-        <label class="form-check-label" for="syncToggle">Sync with Audio</label>
-      </div>
+    <!-- Sync with Audio -->
+    <div id="syncAudio" class="feature sub-feature hidden">
+      <span>Sync with Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="syncToggle" />
+        <span class="slider-round"></span>
+      </label>
     </div>
   </div>
 
   <script>
-    function updateUI() {
-      const mouse = document.getElementById("mouseToggle").checked;
-      const vibration = document.getElementById("vibrationToggle").checked;
+    const mouseToggle = document.getElementById("mouseToggle");
+    const sensitivitySlider = document.getElementById("sensitivitySlider");
+    const heaterControls = document.getElementById("heaterControls");
 
-      document.getElementById("sensitivityControl").style.display = mouse ? "block" : "none";
-      document.getElementById("heaterControls").style.display = mouse ? "none" : "block";
-      document.getElementById("syncOption").style.display = vibration ? "block" : "none";
-    }
+    mouseToggle.addEventListener("change", () => {
+      if (mouseToggle.checked) {
+        sensitivitySlider.classList.remove("hidden");
+        heaterControls.classList.add("hidden");
+      } else {
+        sensitivitySlider.classList.add("hidden");
+        heaterControls.classList.remove("hidden");
+      }
+    });
 
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
-    }
+    const vibrationToggle = document.getElementById("vibrationToggle");
+    const syncAudio = document.getElementById("syncAudio");
+
+    vibrationToggle.addEventListener("change", () => {
+      syncAudio.classList.toggle("hidden", !vibrationToggle.checked);
+    });
   </script>
 </body>
 </html>
