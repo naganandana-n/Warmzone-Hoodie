@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nana Warmzone Controller</title>
+
+  <!-- 🔌 Add socket.io -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
   <style>
     :root {
       --bg: #f5f5f5;
@@ -228,6 +232,12 @@
     darkToggle.addEventListener("click", () => {
       document.body.classList.toggle("dark");
       darkToggle.textContent = document.body.classList.contains("dark") ? "Light" : "Dark";
+    });
+
+    // 👇 Connect to server and request shutdown on tab close
+    const socket = io();
+    window.addEventListener("beforeunload", () => {
+      socket.emit("shutdown");
     });
   </script>
 </body>

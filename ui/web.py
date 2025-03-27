@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 import threading
 import webbrowser
+import os
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -32,6 +33,12 @@ def toggle(data):
     elif key == "sensitivity":
         state["sensitivity"] = data["value"]
     print(f"🔄 Updated state: {state}")
+
+# 🔴 New socket event to shut down the server
+@socketio.on("shutdown")
+def shutdown():
+    print("🛑 Shutdown requested from client.")
+    os._exit(0)
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
