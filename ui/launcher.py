@@ -1,13 +1,19 @@
 import subprocess
 import os
+import sys
 
-# Get absolute path to web.py
-web_py_path = os.path.abspath("web.py")
+# Determine the correct path to web.py (whether running as .py or .exe)
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS if hasattr(sys, '_MEIPASS') else os.path.dirname(sys.executable)
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
 
-# PowerShell command to run the web server silently in the background
+web_py_path = os.path.join(base_path, "web.py")
+
+# PowerShell command to run web.py in background
 powershell_command = f'''
 Start-Process powershell -ArgumentList "-NoProfile -WindowStyle Hidden -Command python '{web_py_path}'" -WindowStyle Hidden
 '''
 
-# Launch the PowerShell command
+# Execute PowerShell command
 subprocess.run(["powershell", "-Command", powershell_command], shell=True)
