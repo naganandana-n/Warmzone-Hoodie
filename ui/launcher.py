@@ -1,26 +1,13 @@
-# pyinstaller --onefile --add-data "templates; templates" --hidden-import flask launcher.py
-
+import subprocess
 import os
-import sys
 
-# ✅ Determine the directory where `launcher.py` (or `launcher.exe`) is running
-if getattr(sys, 'frozen', False):  # Running as an EXE
-    base_dir = os.path.dirname(sys.executable)
-else:
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+# Get absolute path to web.py
+web_py_path = os.path.abspath("web.py")
 
-# ✅ Define the full path to `web.py`
-script_path = os.path.join(base_dir, "web.py")
+# PowerShell command to run the web server silently in the background
+powershell_command = f'''
+Start-Process powershell -ArgumentList "-NoProfile -WindowStyle Hidden -Command python '{web_py_path}'" -WindowStyle Hidden
+'''
 
-# ✅ Ensure `web.py` exists before running
-if not os.path.exists(script_path):
-    print(f"❌ ERROR: web.py not found at {script_path}")
-    input("Press Enter to exit...")
-    sys.exit(1)
-
-# ✅ Run `web.py` safely in the same process
-with open(script_path, encoding="utf-8") as f:
-    code = compile(f.read(), script_path, 'exec')
-    exec(code, globals())
-
-print("✅ web.py has been executed")
+# Launch the PowerShell command
+subprocess.run(["powershell", "-Command", powershell_command], shell=True)
