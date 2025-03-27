@@ -1,13 +1,20 @@
-import subprocess
 import os
 import sys
+import subprocess
 
-venv_python = os.path.abspath(sys.executable)  # This gets path to current venv's python
-web_py_path = os.path.abspath("web.py")
+# Get absolute path to web.py
+current_dir = os.path.dirname(os.path.abspath(__file__))
+web_py_path = os.path.join(current_dir, "web.py")
 
-powershell_command = f'''
-Start-Process powershell -ArgumentList "-NoProfile -Command '{venv_python}' '{web_py_path}'"
-'''
+# Get Python executable from current environment (e.g., venv)
+python_executable = sys.executable
 
-print("Launching with venv interpreter:", venv_python)
-subprocess.run(["powershell", "-Command", powershell_command], shell=True)
+print(f"Launching web.py using Python: {python_executable}")
+print(f"web.py path: {web_py_path}")
+
+# Launch web.py using subprocess
+subprocess.Popen(
+    [python_executable, web_py_path],
+    cwd=current_dir,
+    creationflags=subprocess.CREATE_NO_WINDOW  # Hide terminal window (on .exe build)
+)
