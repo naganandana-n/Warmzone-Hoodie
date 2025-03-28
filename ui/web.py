@@ -4,6 +4,8 @@ import threading
 import webbrowser
 import os
 import json
+import serial.tools.list_ports
+from flask import jsonify
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -50,6 +52,17 @@ def toggle(data):
 def shutdown():
     print("🛑 Shutdown requested from client.")
     os._exit(0)
+
+def get_serial_ports():
+    ports = list(serial.tools.list_ports.comports())
+    return [
+        {"device": p.device, "description": p.description}
+        for p in ports if "serial" in p.description.lower()
+    ]
+
+@app.route("/ports")
+def ports():
+    return jsonify(get_serial_ports())
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
