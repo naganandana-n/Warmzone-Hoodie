@@ -125,7 +125,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     .modal {
@@ -251,7 +251,13 @@
         } else if (autoConnected) {
           content.textContent = "✅ Hoodie connected!";
           modal.classList.remove("hidden");
-          setTimeout(() => modal.classList.add("hidden"), 3000);
+
+          // Force modal to hide after 3 seconds
+          setTimeout(() => {
+            if (!modal.classList.contains("hidden")) {
+              modal.classList.add("hidden");
+            }
+          }, 3000);
         }
       } catch (err) {
         console.error("Error fetching ports:", err);
