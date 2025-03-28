@@ -11,16 +11,26 @@ from flask import request
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Feature States
-state = {
-    "audio": True,
-    "screen": True,
-    "mouse": True,
-    "sensitivity": 3,
-    "heaters": [1, 1, 1],
-    "vibration": False,
-    "sync_with_audio": False
-}
+# Load saved state or use default
+CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+
+def load_state_from_json():
+    try:
+        with open(CONTROL_JSON_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"⚠️ Could not load previous state. Using default: {e}")
+        return {
+            "audio": True,
+            "screen": True,
+            "mouse": True,
+            "sensitivity": 3,
+            "heaters": [1, 1, 1],
+            "vibration": False,
+            "sync_with_audio": False
+        }
+
+state = load_state_from_json()
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
 SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
@@ -64,21 +74,6 @@ def shutdown():
     print("🛑 Shutdown requested from client.")
     write_shutdown_flag()
     os._exit(0)
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    print("🔌 Client disconnected")
-    threading.Timer(2.0, check_and_shutdown_if_no_clients).start()
-
-def check_and_shutdown_if_no_clients():
-    # Check if any clients are still connected
-    active_clients = socketio.server.manager.rooms.get('/', {}).get('/', set())
-    if not active_clients:
-        print("🛑 No clients connected. Shutting down.")
-        write_shutdown_flag()
-        os._exit(0)
-    else:
-        print(f"👥 Clients still connected: {len(active_clients)}")
 
 def get_serial_ports():
     ports = list(serial.tools.list_ports.comports())

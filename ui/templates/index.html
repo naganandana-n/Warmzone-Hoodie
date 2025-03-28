@@ -319,7 +319,9 @@
       document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
     });
 
-
+    window.addEventListener("beforeunload", () => {
+      socket.emit("shutdown");
+    });
   </script>
 </body>
 </html>
