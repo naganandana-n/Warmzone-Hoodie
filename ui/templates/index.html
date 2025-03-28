@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nana Warmzone Controller</title>
-
-  <!-- 🔌 Add socket.io -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <style>
@@ -64,72 +62,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .feature {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 1rem 0;
-    }
-
-    .sub-feature {
-      margin-left: 1.5rem;
-    }
-
-    .slider {
-      width: 150px;
-      margin-left: 1rem;
-      accent-color: #E22DA1;
-    }
-
-    .toggle {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 28px;
-    }
-
-    .toggle input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider-round {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: var(--slider-bg);
-      transition: 0.4s;
-      border-radius: 34px;
-    }
-
-    .slider-round:before {
-      position: absolute;
-      content: "";
-      height: 22px;
-      width: 22px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider-round {
-      background-color: #E22DA1;
-    }
-
-    input:checked + .slider-round:before {
-      transform: translateX(22px);
-    }
-
-    .hidden {
-      display: none;
-    }
-
     .modal {
       position: fixed;
       top: 0;
@@ -150,30 +82,12 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       max-width: 400px;
       width: 90%;
-    }
-
-    .modal-content h2 {
-      margin-top: 0;
-      font-size: 1.3rem;
+      text-align: center;
       color: var(--text);
     }
 
-    .modal-content select {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
-
-    .modal-content button {
-      margin-top: 1rem;
-      background-color: #E22DA1;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -187,63 +101,36 @@
     <!-- Existing features here unchanged -->
   </div>
 
-  <!-- Modal for Port Selection -->
-  <div id="portModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Select ESP32 Port</h2>
-      <select id="portSelect"></select>
-      <button id="confirmPort">Connect</button>
-    </div>
+  <!-- Auto-connect Modal -->
+  <div id="popupModal" class="modal hidden">
+    <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
   <script>
     const socket = io();
-  
+
     async function checkPorts() {
-      const response = await fetch("/ports");
-      const ports = await response.json();
-      const select = document.getElementById("portSelect");
-  
-      select.innerHTML = ""; // ✅ Clear old options
-  
-      if (ports.length === 0) {
-        document.querySelector("#portModal h2").textContent =
-          "Please connect your ESP32 and refresh.";
-        document.getElementById("portModal").classList.remove("hidden");
-      } else if (ports.length === 1) {
-        localStorage.setItem("esp_port", ports[0].device);
-        document.getElementById("portModal").classList.add("hidden");
-  
-        // ✅ Send to backend
-        await fetch("/save_port", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ port: ports[0].device }),
-        });
-      } else {
-        ports.forEach((p) => {
-          const opt = document.createElement("option");
-          opt.value = p.device;
-          opt.textContent = `${p.device} - ${p.description}`;
-          select.appendChild(opt);
-        });
-        document.getElementById("portModal").classList.remove("hidden");
+      try {
+        const response = await fetch("/ports");
+        const result = await response.json();
+        const ports = result.ports;
+        const autoConnected = result.auto_connected;
+        const modal = document.getElementById("popupModal");
+        const content = document.getElementById("popupContent");
+
+        if (ports.length === 0) {
+          content.textContent = "Please connect your hoodie and refresh the browser.";
+          modal.classList.remove("hidden");
+        } else if (autoConnected) {
+          content.textContent = "✅ Hoodie connected!";
+          modal.classList.remove("hidden");
+          setTimeout(() => modal.classList.add("hidden"), 3000);
+        }
+      } catch (err) {
+        console.error("Error fetching ports:", err);
       }
     }
-  
-    document.getElementById("confirmPort").addEventListener("click", async () => {
-      const port = document.getElementById("portSelect").value;
-      localStorage.setItem("esp_port", port);
-      document.getElementById("portModal").classList.add("hidden");
-  
-      // ✅ Send selected port to backend
-      await fetch("/save_port", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ port }),
-      });
-    });
-  
+
     window.onload = checkPorts;
   </script>
 </body>

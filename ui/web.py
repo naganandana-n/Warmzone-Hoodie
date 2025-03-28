@@ -24,6 +24,7 @@ state = {
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
 SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
+SELECTED_PORT_PATH = os.path.join(os.path.dirname(__file__), "selected_port.json")
 
 def write_state_to_json():
     try:
@@ -72,7 +73,21 @@ def get_serial_ports():
 
 @app.route("/ports")
 def ports():
-    return jsonify(get_serial_ports())
+    ports = get_serial_ports()
+    response = {"ports": ports, "auto_connected": False}
+
+    if len(ports) == 1:
+        # Auto-save if only one serial device found
+        try:
+            with open(SELECTED_PORT_PATH, "w") as f:
+                json.dump({"port": ports[0]["device"]}, f)
+            print(f"✅ Auto-saved port: {ports[0]['device']}")
+            response["auto_connected"] = True
+        except Exception as e:
+            print(f"❌ Failed to auto-save port: {e}")
+            response["auto_connected"] = False
+
+    return jsonify(response)
 
 @app.route("/save_port", methods=["POST"])
 def save_port():
@@ -80,7 +95,7 @@ def save_port():
         data = request.get_json()
         port = data.get("port")
         if port:
-            with open("selected_port.json", "w") as f:
+            with open(SELECTED_PORT_PATH, "w") as f:
                 json.dump({"port": port}, f)
             print(f"💾 Saved selected port: {port}")
             return jsonify({"status": "success"})
