@@ -164,7 +164,7 @@
     <div class="feature">
       <span>Audio</span>
       <label class="toggle">
-        <input type="checkbox" id="audioToggle" checked />
+        <input type="checkbox" id="audioToggle" />
         <span class="slider-round"></span>
       </label>
     </div>
@@ -173,7 +173,7 @@
     <div class="feature">
       <span>Screen</span>
       <label class="toggle">
-        <input type="checkbox" id="screenToggle" checked />
+        <input type="checkbox" id="screenToggle" />
         <span class="slider-round"></span>
       </label>
     </div>
@@ -182,7 +182,7 @@
     <div class="feature">
       <span>Mouse</span>
       <label class="toggle">
-        <input type="checkbox" id="mouseToggle" checked />
+        <input type="checkbox" id="mouseToggle" />
         <span class="slider-round"></span>
       </label>
     </div>
@@ -233,6 +233,11 @@
     <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
+  <!-- 🧠 Inject initial state from Flask -->
+  <script>
+    const initialState = {{ state|tojson }};
+  </script>
+
   <script>
     const socket = io();
 
@@ -251,20 +256,33 @@
         } else if (autoConnected) {
           content.textContent = "✅ Hoodie connected!";
           modal.classList.remove("hidden");
-
-          // Force modal to hide after 3 seconds
-          setTimeout(() => {
-            if (!modal.classList.contains("hidden")) {
-              modal.classList.add("hidden");
-            }
-          }, 3000);
+          setTimeout(() => modal.classList.add("hidden"), 3000);
         }
       } catch (err) {
         console.error("Error fetching ports:", err);
       }
     }
 
-    window.onload = checkPorts;
+    // ✅ Setup UI from control_state.json
+    window.onload = () => {
+      document.getElementById("audioToggle").checked = initialState.audio;
+      document.getElementById("screenToggle").checked = initialState.screen;
+      document.getElementById("mouseToggle").checked = initialState.mouse;
+      document.getElementById("vibrationToggle").checked = initialState.vibration;
+      document.getElementById("syncToggle").checked = initialState.sync_with_audio;
+
+      document.getElementById("sensitivity").value = initialState.sensitivity;
+      document.getElementById("heater1").value = initialState.heaters[0];
+      document.getElementById("heater2").value = initialState.heaters[1];
+      document.getElementById("heater3").value = initialState.heaters[2];
+
+      // Update visibility
+      document.getElementById("sensitivitySlider").classList.toggle("hidden", !initialState.mouse);
+      document.getElementById("heaterControls").classList.toggle("hidden", initialState.mouse);
+      document.getElementById("syncAudio").classList.toggle("hidden", !initialState.vibration);
+
+      checkPorts(); // 🔁 continue ESP check
+    };
 
     // Toggle & Slider Events
     const mouseToggle = document.getElementById("mouseToggle");
