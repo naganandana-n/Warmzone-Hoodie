@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 import threading
 import webbrowser
 import os
+import json
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -18,6 +19,15 @@ state = {
     "sync_with_audio": False
 }
 
+CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+
+def write_state_to_json():
+    try:
+        with open(CONTROL_JSON_PATH, "w") as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"❌ Failed to write to JSON: {e}")
+
 @app.route("/")
 def index():
     return render_template("index.html", state=state)
@@ -32,9 +42,10 @@ def toggle(data):
         state["heaters"][idx] = data["value"]
     elif key == "sensitivity":
         state["sensitivity"] = data["value"]
-    print(f"🔄 Updated state: {state}")
 
-# 🔴 New socket event to shut down the server
+    print(f"🔄 Updated state: {state}")
+    write_state_to_json()
+
 @socketio.on("shutdown")
 def shutdown():
     print("🛑 Shutdown requested from client.")
@@ -44,6 +55,8 @@ def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
 def run_server():
+    # Write initial state on startup
+    write_state_to_json()
     threading.Thread(target=open_browser, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000)
 

@@ -1,8 +1,8 @@
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
-#define LED_PIN 5       // Pin connected to the LED strip
-#define NUM_LEDS 30     // Total number of LEDs
+#define LED_PIN 23      // Pin connected to the LED strip
+#define NUM_LEDS 50     // Total number of LEDs
 #define BRIGHTNESS 200  // LED Brightness (0-255)
 #define FADE_STEPS 30   // Steps for smooth transition
 #define FADE_DELAY 15   // Delay per step

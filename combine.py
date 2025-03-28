@@ -221,6 +221,25 @@ from collections import deque
 from queue import Queue, Empty
 from PIL import Image, ImageEnhance
 from scipy.spatial import distance
+import os
+
+CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+
+def read_control_state():
+    try:
+        with open(CONTROL_JSON_PATH, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"⚠️ Failed to read control_state.json: {e}")
+        return {
+            "audio": True,
+            "screen": True,
+            "mouse": True,
+            "sensitivity": 3,
+            "heaters": [1, 1, 1],
+            "vibration": False,
+            "sync_with_audio": False
+        }
 
 # **🔹 Control Variables**
 stop_event = threading.Event()
@@ -410,17 +429,27 @@ def get_screen_grid_colors():
 def send_data():
     """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
     while not stop_event.is_set():
-        # **Collect latest data**
-        colors = get_screen_grid_colors()
-        mouse_speed = calculate_scaled_speed()  # ✅ Use new function
+        control_state = read_control_state()
 
-        json_data = {
-            "LEDColors": colors,
-            "Brightness": audio_brightness,
-            "MouseSpeed": mouse_speed
-        }
+        json_data = {}
 
-        # **Send even if data hasn't changed**
+        if control_state.get("screen", True):
+            colors = get_screen_grid_colors()
+            json_data["LEDColors"] = colors
+
+        if control_state.get("audio", True):
+            json_data["Brightness"] = audio_brightness
+
+        if control_state.get("mouse", True):
+            mouse_speed = calculate_scaled_speed()
+            json_data["MouseSpeed"] = mouse_speed
+
+        # Placeholder for future features
+        json_data["sensitivity"] = control_state.get("sensitivity", 3)
+        json_data["heaters"] = control_state.get("heaters", [1, 1, 1])
+        json_data["vibration"] = control_state.get("vibration", False)
+        json_data["sync_with_audio"] = control_state.get("sync_with_audio", False)
+
         json_str = json.dumps(json_data)
         serial_queue.put(json_str)
         print(f"📡 Sending: {json_str}")  # Debug print
