@@ -257,6 +257,7 @@
       // ⏳ After 5 seconds, shutdown the app
       setTimeout(() => {
         socket.emit("shutdown"); // Triggers web.py shutdown
+        window.close();
       }, 5000);
     } else if (autoConnected) {
       content.textContent = "✅ Hoodie connected!";
