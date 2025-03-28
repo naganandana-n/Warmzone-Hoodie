@@ -65,6 +65,21 @@ def shutdown():
     write_shutdown_flag()
     os._exit(0)
 
+@socketio.on("disconnect")
+def handle_disconnect():
+    print("🔌 Client disconnected")
+    threading.Timer(2.0, check_and_shutdown_if_no_clients).start()
+
+def check_and_shutdown_if_no_clients():
+    # Check if any clients are still connected
+    active_clients = socketio.server.manager.rooms.get('/', {}).get('/', set())
+    if not active_clients:
+        print("🛑 No clients connected. Shutting down.")
+        write_shutdown_flag()
+        os._exit(0)
+    else:
+        print(f"👥 Clients still connected: {len(active_clients)}")
+
 def get_serial_ports():
     ports = list(serial.tools.list_ports.comports())
     return [
