@@ -242,26 +242,34 @@
     const socket = io();
 
     async function checkPorts() {
-      try {
-        const response = await fetch("/ports");
-        const result = await response.json();
-        const ports = result.ports;
-        const autoConnected = result.auto_connected;
-        const modal = document.getElementById("popupModal");
-        const content = document.getElementById("popupContent");
+  try {
+    const response = await fetch("/ports");
+    const result = await response.json();
+    const ports = result.ports;
+    const autoConnected = result.auto_connected;
+    const modal = document.getElementById("popupModal");
+    const content = document.getElementById("popupContent");
 
-        if (ports.length === 0) {
-          content.textContent = "Please connect your hoodie and refresh the browser.";
-          modal.classList.remove("hidden");
-        } else if (autoConnected) {
-          content.textContent = "✅ Hoodie connected!";
-          modal.classList.remove("hidden");
-          setTimeout(() => modal.classList.add("hidden"), 3000);
-        }
-      } catch (err) {
-        console.error("Error fetching ports:", err);
-      }
+    if (ports.length === 0) {
+      content.textContent = "Please connect your hoodie and relaunch the app.";
+      modal.classList.remove("hidden");
+
+      // ⏳ After 5 seconds, shutdown the app
+      setTimeout(() => {
+        socket.emit("shutdown"); // Triggers web.py shutdown
+      }, 5000);
+    } else if (autoConnected) {
+      content.textContent = "✅ Hoodie connected!";
+      modal.classList.remove("hidden");
+
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 3000);
     }
+  } catch (err) {
+    console.error("Error fetching ports:", err);
+  }
+}
 
     // ✅ Setup UI from control_state.json
     window.onload = () => {
