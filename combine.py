@@ -247,27 +247,18 @@ serial_queue = Queue()
 SERIAL_WRITE_DELAY = 0.1  # Adjust sending rate
 
 # **📡 Find Available Serial Port**
-def find_serial_port():
-    ports = list(serial.tools.list_ports.comports())
-    if not ports:
-        print("❌ No serial ports detected.")
+# **📡 Get Serial Port from selected_port.json**
+def get_selected_serial_port():
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "selected_port.json"), "r") as f:
+            data = json.load(f)
+            return data.get("port", None)
+    except Exception as e:
+        print(f"❌ Could not read selected_port.json: {e}")
         return None
 
-    print("\n🔍 Available Serial Ports:")
-    for i, port in enumerate(ports):
-        print(f"  [{i+1}] {port.device} - {port.description}")
+SERIAL_PORT = get_selected_serial_port()
 
-    while True:
-        try:
-            choice = int(input("\n🎯 Select a port number: ")) - 1
-            if 0 <= choice < len(ports):
-                return ports[choice].device
-            else:
-                print("❌ Invalid selection.")
-        except ValueError:
-            print("❌ Enter a valid number.")
-
-SERIAL_PORT = find_serial_port()
 ser = None
 if SERIAL_PORT:
     try:
