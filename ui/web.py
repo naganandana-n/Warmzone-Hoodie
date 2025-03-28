@@ -40,13 +40,14 @@ def index():
 @socketio.on("toggle")
 def toggle(data):
     key = data["key"]
-    if key in state:
-        state[key] = not state[key]
+
+    if key == "sensitivity":
+        state["sensitivity"] = data["value"]
     elif key.startswith("heater"):
         idx = int(key[-1]) - 1
         state["heaters"][idx] = data["value"]
-    elif key == "sensitivity":
-        state["sensitivity"] = data["value"]
+    elif key in state and isinstance(state[key], bool):
+        state[key] = not state[key]
 
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
@@ -61,7 +62,7 @@ def write_shutdown_flag():
 @socketio.on("shutdown")
 def shutdown():
     print("🛑 Shutdown requested from client.")
-    write_shutdown_flag()  # ✅ Write shutdown signal for backend
+    write_shutdown_flag()
     os._exit(0)
 
 def get_serial_ports():
@@ -77,7 +78,6 @@ def ports():
     response = {"ports": ports, "auto_connected": False}
 
     if len(ports) == 1:
-        # Auto-save if only one serial device found
         try:
             with open(SELECTED_PORT_PATH, "w") as f:
                 json.dump({"port": ports[0]["device"]}, f)
@@ -109,7 +109,6 @@ def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
 
 def run_server():
-    # Write initial state on startup
     write_state_to_json()
     threading.Thread(target=open_browser, daemon=True).start()
     socketio.run(app, host="0.0.0.0", port=5000)
