@@ -429,32 +429,39 @@ def get_screen_grid_colors():
 def send_data():
     """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
     while not stop_event.is_set():
-        control_state = read_control_state()
+        # 🔄 Read control state
+        try:
+            with open("control_state.json", "r") as f:
+                control = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Failed to read control_state.json: {e}")
+            control = {}
 
         json_data = {}
 
-        if control_state.get("screen", True):
+        # ✅ Conditionally include data based on UI toggle
+        if control.get("screen", True):
             colors = get_screen_grid_colors()
-            json_data["LEDColors"] = colors
+            json_data["LEDColors"] = get_most_distinct_colors(colors)
 
-        if control_state.get("audio", True):
+        if control.get("audio", True):
             json_data["Brightness"] = audio_brightness
 
-        if control_state.get("mouse", True):
-            mouse_speed = calculate_scaled_speed()
-            json_data["MouseSpeed"] = mouse_speed
+        if control.get("mouse", True):
+            json_data["MouseSpeed"] = calculate_scaled_speed()
 
-        # Placeholder for future features
-        json_data["sensitivity"] = control_state.get("sensitivity", 3)
-        json_data["heaters"] = control_state.get("heaters", [1, 1, 1])
-        json_data["vibration"] = control_state.get("vibration", False)
-        json_data["sync_with_audio"] = control_state.get("sync_with_audio", False)
+        # ➕ Future support
+        json_data["sensitivity"] = control.get("sensitivity", 3)
+        json_data["heaters"] = control.get("heaters", [1, 1, 1])
+        json_data["vibration"] = control.get("vibration", False)
+        json_data["sync_with_audio"] = control.get("sync_with_audio", False)
 
+        # 📡 Send to ESP32
         json_str = json.dumps(json_data)
         serial_queue.put(json_str)
-        print(f"📡 Sending: {json_str}")  # Debug print
+        print(f"📡 Sending: {json_str}")
 
-        time.sleep(SERIAL_WRITE_DELAY)  # Maintain uniform sending rate
+        time.sleep(SERIAL_WRITE_DELAY)
 
 # **📡 Serial Write Thread**
 def serial_write_loop():
