@@ -224,6 +224,7 @@ from scipy.spatial import distance
 import os
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
 
 def read_control_state():
     try:
@@ -240,6 +241,14 @@ def read_control_state():
             "vibration": False,
             "sync_with_audio": False
         }
+
+def was_shutdown_requested():
+    try:
+        with open(SHUTDOWN_FLAG_PATH, "r") as f:
+            data = json.load(f)
+            return data.get("shutdown", False)
+    except Exception:
+        return False
 
 # **🔹 Control Variables**
 stop_event = threading.Event()
@@ -478,16 +487,22 @@ def main_loop():
             threading.Thread(target=serial_write_loop, daemon=True).start()
 
             while not stop_event.is_set():
-                time.sleep(0.05)  # Maintain loop timing
+                if was_shutdown_requested():
+                    print("🛑 Shutdown requested via shutdown_flag.json")
+                    stop_event.set()
+                    break
+                time.sleep(0.05)
 
     except KeyboardInterrupt:
         print("\n🚪 Exiting program... (Ctrl + C detected)")
         stop_event.set()
+
+    finally:
         if ser:
             ser.close()
         time.sleep(1)
         exit(0)
-
+    
 # **🔹 Run the main function**
 if __name__ == "__main__":
     main_thread = threading.Thread(target=main_loop, daemon=True)

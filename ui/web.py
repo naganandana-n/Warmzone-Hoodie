@@ -23,6 +23,7 @@ state = {
 }
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
 
 def write_state_to_json():
     try:
@@ -49,9 +50,17 @@ def toggle(data):
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
 
+def write_shutdown_flag():
+    try:
+        with open(SHUTDOWN_FLAG_PATH, "w") as f:
+            json.dump({"shutdown": True}, f)
+    except Exception as e:
+        print(f"❌ Failed to write shutdown flag: {e}")
+
 @socketio.on("shutdown")
 def shutdown():
     print("🛑 Shutdown requested from client.")
+    write_shutdown_flag()  # ✅ Write shutdown signal for backend
     os._exit(0)
 
 def get_serial_ports():
