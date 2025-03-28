@@ -69,6 +69,10 @@
       margin: 1rem 0;
     }
 
+    .sub-feature {
+      margin-left: 1.5rem;
+    }
+
     .slider {
       width: 150px;
       margin-left: 1rem;
@@ -120,6 +124,10 @@
       transform: translateX(22px);
     }
 
+    .hidden {
+      display: none;
+    }
+
     .modal {
       position: fixed;
       top: 0;
@@ -143,10 +151,6 @@
       text-align: center;
       color: var(--text);
     }
-
-    .hidden {
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -156,6 +160,7 @@
   </div>
 
   <div class="container">
+    <!-- Audio -->
     <div class="feature">
       <span>Audio</span>
       <label class="toggle">
@@ -164,6 +169,7 @@
       </label>
     </div>
 
+    <!-- Screen -->
     <div class="feature">
       <span>Screen</span>
       <label class="toggle">
@@ -172,6 +178,7 @@
       </label>
     </div>
 
+    <!-- Mouse -->
     <div class="feature">
       <span>Mouse</span>
       <label class="toggle">
@@ -180,9 +187,44 @@
       </label>
     </div>
 
-    <div class="feature">
+    <!-- Mouse Sensitivity -->
+    <div id="sensitivitySlider" class="feature sub-feature">
       <span>Sensitivity</span>
-      <input type="range" min="1" max="5" value="3" class="slider" id="sensitivitySlider" />
+      <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+    </div>
+
+    <!-- Heaters (Only if mouse is off) -->
+    <div id="heaterControls" class="sub-feature hidden">
+      <div class="feature">
+        <span>Heater 1</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
+      </div>
+      <div class="feature">
+        <span>Heater 2</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+      </div>
+      <div class="feature">
+        <span>Heater 3</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+      </div>
+    </div>
+
+    <!-- Vibration -->
+    <div class="feature">
+      <span>Vibration</span>
+      <label class="toggle">
+        <input type="checkbox" id="vibrationToggle" />
+        <span class="slider-round"></span>
+      </label>
+    </div>
+
+    <!-- Sync with Audio -->
+    <div id="syncAudio" class="feature sub-feature hidden">
+      <span>Sync with Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="syncToggle" />
+        <span class="slider-round"></span>
+      </label>
     </div>
   </div>
 
@@ -218,7 +260,31 @@
 
     window.onload = checkPorts;
 
-    // Handle feature toggles
+    // Toggle & Slider Events
+    const mouseToggle = document.getElementById("mouseToggle");
+    const sensitivitySlider = document.getElementById("sensitivitySlider");
+    const heaterControls = document.getElementById("heaterControls");
+
+    mouseToggle.addEventListener("change", () => {
+      if (mouseToggle.checked) {
+        sensitivitySlider.classList.remove("hidden");
+        heaterControls.classList.add("hidden");
+      } else {
+        sensitivitySlider.classList.add("hidden");
+        heaterControls.classList.remove("hidden");
+      }
+      socket.emit("toggle", { key: "mouse" });
+    });
+
+    document.getElementById("vibrationToggle").addEventListener("change", (e) => {
+      document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
+      socket.emit("toggle", { key: "vibration" });
+    });
+
+    document.getElementById("syncToggle").addEventListener("change", () => {
+      socket.emit("toggle", { key: "sync_with_audio" });
+    });
+
     document.getElementById("audioToggle").addEventListener("change", () => {
       socket.emit("toggle", { key: "audio" });
     });
@@ -227,19 +293,28 @@
       socket.emit("toggle", { key: "screen" });
     });
 
-    document.getElementById("mouseToggle").addEventListener("change", () => {
-      socket.emit("toggle", { key: "mouse" });
-    });
-
-    document.getElementById("sensitivitySlider").addEventListener("input", (e) => {
+    document.getElementById("sensitivity").addEventListener("input", e => {
       socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) });
     });
 
-    // Optional: Dark mode toggle
-    const darkToggle = document.getElementById("darkModeToggle");
-    darkToggle.addEventListener("click", () => {
+    document.getElementById("heater1").addEventListener("input", e => {
+      socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
+    });
+    document.getElementById("heater2").addEventListener("input", e => {
+      socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
+    });
+    document.getElementById("heater3").addEventListener("input", e => {
+      socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
+    });
+
+    document.getElementById("darkModeToggle").addEventListener("click", () => {
       document.body.classList.toggle("dark");
-      darkToggle.textContent = document.body.classList.contains("dark") ? "Light" : "Dark";
+      const isDark = document.body.classList.contains("dark");
+      document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
+    });
+
+    window.addEventListener("beforeunload", () => {
+      socket.emit("shutdown");
     });
   </script>
 </body>
