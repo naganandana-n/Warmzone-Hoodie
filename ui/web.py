@@ -85,7 +85,22 @@ def get_serial_ports():
 @app.route("/ports")
 def ports():
     ports = get_serial_ports()
-    response = {"ports": ports, "auto_connected": False}
+    selected_port = None
+
+    # Try to get the previously saved port
+    if os.path.exists(SELECTED_PORT_PATH):
+        try:
+            with open(SELECTED_PORT_PATH, "r") as f:
+                selected_data = json.load(f)
+                selected_port = selected_data.get("port")
+        except Exception as e:
+            print(f"⚠️ Failed to read selected_port.json: {e}")
+
+    response = {
+        "ports": ports,
+        "auto_connected": False,
+        "selected_port": selected_port
+    }
 
     if len(ports) == 1:
         try:
