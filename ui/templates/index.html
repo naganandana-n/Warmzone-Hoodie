@@ -331,11 +331,20 @@
       socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
     });
 
-    document.getElementById("darkModeToggle").addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      const isDark = document.body.classList.contains("dark");
-      document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
-    });
+    // Restore dark mode from localStorage
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "dark") {
+  document.body.classList.add("dark");
+  document.getElementById("darkModeToggle").textContent = "Light";
+}
+
+// Toggle & remember dark mode
+document.getElementById("darkModeToggle").addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+});
 
     window.addEventListener("beforeunload", () => {
       socket.emit("shutdown");
