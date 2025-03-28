@@ -198,35 +198,52 @@
 
   <script>
     const socket = io();
-
+  
     async function checkPorts() {
-  const response = await fetch("/ports");
-  const ports = await response.json();
-  const select = document.getElementById("portSelect");
-
-  if (ports.length === 0) {
-    document.querySelector("#portModal h2").textContent = "Please connect your ESP32 and refresh.";
-    document.getElementById("portModal").classList.remove("hidden");
-  } else if (ports.length === 1) {
-    localStorage.setItem("esp_port", ports[0].device);
-    document.getElementById("portModal").classList.add("hidden"); // ✅ Hide popup if auto-selected
-  } else {
-    ports.forEach(p => {
-      const opt = document.createElement("option");
-      opt.value = p.device;
-      opt.textContent = `${p.device} - ${p.description}`;
-      select.appendChild(opt);
-    });
-    document.getElementById("portModal").classList.remove("hidden");
-  }
-}
-
-    document.getElementById("confirmPort").addEventListener("click", () => {
+      const response = await fetch("/ports");
+      const ports = await response.json();
+      const select = document.getElementById("portSelect");
+  
+      select.innerHTML = ""; // ✅ Clear old options
+  
+      if (ports.length === 0) {
+        document.querySelector("#portModal h2").textContent =
+          "Please connect your ESP32 and refresh.";
+        document.getElementById("portModal").classList.remove("hidden");
+      } else if (ports.length === 1) {
+        localStorage.setItem("esp_port", ports[0].device);
+        document.getElementById("portModal").classList.add("hidden");
+  
+        // ✅ Send to backend
+        await fetch("/save_port", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ port: ports[0].device }),
+        });
+      } else {
+        ports.forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.device;
+          opt.textContent = `${p.device} - ${p.description}`;
+          select.appendChild(opt);
+        });
+        document.getElementById("portModal").classList.remove("hidden");
+      }
+    }
+  
+    document.getElementById("confirmPort").addEventListener("click", async () => {
       const port = document.getElementById("portSelect").value;
       localStorage.setItem("esp_port", port);
       document.getElementById("portModal").classList.add("hidden");
+  
+      // ✅ Send selected port to backend
+      await fetch("/save_port", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ port }),
+      });
     });
-
+  
     window.onload = checkPorts;
   </script>
 </body>

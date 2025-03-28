@@ -6,6 +6,7 @@ import os
 import json
 import serial.tools.list_ports
 from flask import jsonify
+from flask import request
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -63,6 +64,22 @@ def get_serial_ports():
 @app.route("/ports")
 def ports():
     return jsonify(get_serial_ports())
+
+@app.route("/save_port", methods=["POST"])
+def save_port():
+    try:
+        data = request.get_json()
+        port = data.get("port")
+        if port:
+            with open("selected_port.json", "w") as f:
+                json.dump({"port": port}, f)
+            print(f"💾 Saved selected port: {port}")
+            return jsonify({"status": "success"})
+        else:
+            return jsonify({"status": "error", "message": "No port provided"}), 400
+    except Exception as e:
+        print(f"❌ Failed to save port: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def open_browser():
     webbrowser.open("http://127.0.0.1:5000")
