@@ -251,13 +251,12 @@
     const content = document.getElementById("popupContent");
 
     if (ports.length === 0) {
-      content.textContent = "Please connect your hoodie and relaunch the app.";
+      content.textContent = "Please connect your hoodie and relaunch the app. Please close this browser page";
       modal.classList.remove("hidden");
 
       // ⏳ After 5 seconds, shutdown the app
       setTimeout(() => {
         socket.emit("shutdown"); // Triggers web.py shutdown
-        window.close();
       }, 5000);
     } else if (autoConnected) {
       content.textContent = "✅ Hoodie connected!";
@@ -269,6 +268,36 @@
     }
   } catch (err) {
     console.error("Error fetching ports:", err);
+  }
+}
+
+let hoodiePreviouslyConnected = false;
+
+async function monitorESPConnection() {
+  try {
+    const response = await fetch("/ports");
+    const result = await response.json();
+    const ports = result.ports;
+
+    if (hoodiePreviouslyConnected && ports.length === 0) {
+      // ESP32 was connected earlier but now disconnected
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+
+      content.textContent = "Your hoodie has been disconnected. Please reconnect and relaunch the app. Please close this browser page.";
+      modal.classList.remove("hidden");
+
+      // Shutdown backend and prevent further interaction
+      socket.emit("shutdown");
+    }
+
+    // Update connection flag
+    if (ports.length > 0) {
+      hoodiePreviouslyConnected = true;
+    }
+
+  } catch (err) {
+    console.error("ESP32 connection check failed:", err);
   }
 }
 
@@ -291,6 +320,7 @@
       document.getElementById("syncAudio").classList.toggle("hidden", !initialState.vibration);
 
       checkPorts(); // 🔁 continue ESP check
+      setInterval(monitorESPConnection, 5000); // check every 5 seconds
     };
 
     // Toggle & Slider Events
