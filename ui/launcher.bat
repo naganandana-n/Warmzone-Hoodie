@@ -1,10 +1,42 @@
 @echo off
 cd /d "%~dp0"
 
-echo Launching Nana Warmzone Controller frontend...
-call venv\Scripts\python.exe web.py
+REM === Detect system architecture ===
+set "ARCH="
+set "PROCESSOR=%PROCESSOR_ARCHITECTURE%"
 
-echo Launching backend processor...
-call venv\Scripts\python.exe backend.py
+if /i "%PROCESSOR%"=="AMD64" (
+    set "ARCH=python-3.13.2-embed-amd64"
+) else if /i "%PROCESSOR%"=="x86" (
+    set "ARCH=python-3.13.2-embed-win32"
+) else if /i "%PROCESSOR%"=="ARM64" (
+    set "ARCH=python-3.13.2-embed-arm64"
+) else (
+    echo ❌ Unknown architecture: %PROCESSOR%
+    pause
+    exit /b 1
+)
+
+REM === Full path to embedded Python ===
+set "PYTHON_DIR=%~dp0python-embed\%ARCH%"
+set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
+
+if not exist "%PYTHON_EXE%" (
+    echo ❌ Could not find python.exe for %ARCH%
+    pause
+    exit /b 1
+)
+
+REM === Set PYTHONPATH so Python can find libraries ===
+set PYTHONPATH=%PYTHON_DIR%\Lib;%PYTHON_DIR%\Lib\site-packages
+
+REM === Start web.py ===
+start "" "%PYTHON_EXE%" "%~dp0web.py"
+
+REM === Small delay to let web.py load first ===
+timeout /t 1 >nul
+
+REM === Start backend.py ===
+start "" "%PYTHON_EXE%" "%~dp0backend.py"
 
 exit
