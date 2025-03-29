@@ -5,6 +5,8 @@ REM === Detect system architecture ===
 set "ARCH="
 set "PROCESSOR=%PROCESSOR_ARCHITECTURE%"
 
+echo Detected architecture: %PROCESSOR%
+
 if /i "%PROCESSOR%"=="AMD64" (
     set "ARCH=python-3.13.2-embed-amd64"
 ) else if /i "%PROCESSOR%"=="x86" (
@@ -21,8 +23,10 @@ REM === Full path to embedded Python ===
 set "PYTHON_DIR=%~dp0python-embed\%ARCH%"
 set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
 
+echo Using Python from: %PYTHON_EXE%
+
 if not exist "%PYTHON_EXE%" (
-    echo ❌ Could not find python.exe for %ARCH%
+    echo ❌ python.exe not found in: %PYTHON_DIR%
     pause
     exit /b 1
 )
@@ -30,13 +34,14 @@ if not exist "%PYTHON_EXE%" (
 REM === Set PYTHONPATH so Python can find libraries ===
 set PYTHONPATH=%PYTHON_DIR%\Lib;%PYTHON_DIR%\Lib\site-packages
 
-REM === Start web.py ===
+echo ✅ Launching web.py...
 start "" "%PYTHON_EXE%" "%~dp0web.py"
 
-REM === Small delay to let web.py load first ===
 timeout /t 1 >nul
 
-REM === Start backend.py ===
+echo ✅ Launching backend.py...
 start "" "%PYTHON_EXE%" "%~dp0backend.py"
 
+echo ✅ All launched. You can close this window.
+pause
 exit
