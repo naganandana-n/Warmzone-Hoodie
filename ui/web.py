@@ -80,7 +80,7 @@ def open_sound_settings():
     try:
         nircmd_path = os.path.join(os.path.dirname(__file__), "audio", "nircmd.exe")
         if os.path.exists(nircmd_path):
-            subprocess.Popen([nircmd_path, "mmsys.cpl"], shell=True)
+            subprocess.Popen([nircmd_path, "exec", "hide", "mmsys.cpl"], shell=True)
             return jsonify({"status": "launched"})
         else:
             return jsonify({"status": "error", "message": "nircmd.exe not found"}), 404
