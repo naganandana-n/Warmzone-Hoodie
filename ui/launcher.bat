@@ -22,6 +22,7 @@ if /i "%PROCESSOR%"=="AMD64" (
 
 REM === Set paths ===
 set "CONTROLLER_DIR=%~dp0"
+set "CONTROLLER_DIR=%CONTROLLER_DIR:~0,-1%"
 set "PYTHON_DIR=%CONTROLLER_DIR%\python-embed\%ARCH%"
 set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
 set "WEB_PY=%CONTROLLER_DIR%\web.py"
