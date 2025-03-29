@@ -75,7 +75,7 @@ def open_browser_to_setup():
     launch_web_server()
     time.sleep(2)  # Give the web server time to start
     import webbrowser
-    webbrowser.open("http://localhost:5000/vb-setup")
+    webbrowser.open("http://127.0.0.1:5000/vb_setup")
 
 def main():
     state = load_state()
