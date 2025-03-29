@@ -185,7 +185,21 @@ def open_browser():
 
 def run_server():
     write_state_to_json()
-    threading.Thread(target=open_browser, daemon=True).start()
+
+    # Only open browser if VB-Cable setup is complete
+    skip_browser = False
+    if os.path.exists(VB_SETUP_STATE_PATH):
+        try:
+            with open(VB_SETUP_STATE_PATH, "r") as f:
+                vb_state = json.load(f)
+                if not vb_state.get("setup_done", False):
+                    skip_browser = True
+        except:
+            skip_browser = True
+
+    if not skip_browser:
+        threading.Thread(target=open_browser, daemon=True).start()
+
     socketio.run(app, host="0.0.0.0", port=5000)
 
 
