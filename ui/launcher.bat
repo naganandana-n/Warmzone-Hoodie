@@ -1,4 +1,3 @@
-
 @echo off
 cd /d "%~dp0"
 
@@ -27,6 +26,7 @@ set "PYTHON_DIR=%CONTROLLER_DIR%\python-embed\%ARCH%"
 set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
 set "WEB_PY=%CONTROLLER_DIR%\web.py"
 set "BACKEND_PY=%CONTROLLER_DIR%\backend.py"
+set "CHECK_VB_SETUP=%CONTROLLER_DIR%\check_vb_install.py"
 
 REM === Validate files ===
 if not exist "%PYTHON_EXE%" (
@@ -45,6 +45,15 @@ if not exist "%BACKEND_PY%" (
     echo ❌ backend.py not found in: %CONTROLLER_DIR%
     pause
     exit /b 1
+)
+
+REM === Run VB-Audio Cable check ===
+echo 🔍 Checking VB-Cable setup...
+"%PYTHON_EXE%" "%CHECK_VB_SETUP%"
+if errorlevel 1 (
+    echo ⚠️  VB-Cable setup required. Exiting launcher.
+    timeout /t 3 >nul
+    exit /b
 )
 
 REM === Launch both scripts (no visible terminals) ===

@@ -442,7 +442,7 @@ def send_data():
         # ✅ Conditionally include data based on UI toggle
         if control.get("screen", True):
             colors = get_screen_grid_colors()
-            json_data["LEDColors"] = get_most_distinct_colors(colors)
+            json_data["LEDColors"] = colorss
 
         if control.get("audio", True):
             json_data["Brightness"] = audio_brightness

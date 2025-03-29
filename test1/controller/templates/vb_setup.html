@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VB-Cable Setup</title>
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --text: #333;
+      --card: white;
+      --button: #E22DA1;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #fff;
+      --card: #1e1e1e;
+      --button: #E22DA1;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: 0.3s;
+    }
+
+    .header {
+      background-color: var(--button);
+      padding: 1rem;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .instructions {
+      white-space: pre-line;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      background-color: var(--button);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-right: 1rem;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">VB-Audio Cable Setup</div>
+
+  <div class="container">
+    <div class="instructions">
+      1. The 'Sound' settings window will open shortly.
+      2. In the 'Playback' tab, select 'CABLE Input' and click 'Set Default'.
+      3. Click the 'Recording' tab, select 'CABLE Output' and click 'Set Default'.
+      4. Double-click on 'CABLE Output'.
+      5. In the 'Properties' window, go to the 'Listen' tab.
+      6. Check the box 'Listen to this device'.
+      7. In 'Playback through this device', select your speakers or headphones.
+      8. Click 'Apply' and then 'OK'.
+      9. In the 'Sound' window, click 'Apply' and then 'OK'.
+      10. Once finished, click 'Complete Setup' below.
+    </div>
+
+    <button class="btn" onclick="openSoundSettings()">Sound Settings</button>
+    <button class="btn" onclick="completeSetup()">Complete Setup</button>
+  </div>
+
+  <script>
+    // Restore dark mode if previously enabled
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark");
+    }
+
+    function openSoundSettings() {
+      fetch('/open_sound_settings');
+    }
+
+    function completeSetup() {
+      fetch('/vb_setup_done', { method: 'POST' })
+        .then(() => window.location.href = '/')
+        .catch(err => alert("Failed to complete setup: " + err));
+    }
+  </script>
+</body>
+</html>
