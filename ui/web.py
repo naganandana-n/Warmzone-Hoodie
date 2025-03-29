@@ -126,7 +126,7 @@ def get_serial_ports():
     return [
         {"device": p.device, "description": p.description}
         for p in ports
-        if any(x in p.description.lower() for x in ["ch340", "serial", "usb", "cp210", "ftdi"])
+        if any(x in p.description.lower() for x in ["ch340"])
     ]
 
 
