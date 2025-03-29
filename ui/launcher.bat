@@ -44,12 +44,8 @@ if not exist "%BACKEND_PY%" (
     exit /b 1
 )
 
-REM === Launch both scripts ===
-echo ✅ Launching Nana Warmzone Controller frontend...
-start "" "%PYTHON_EXE%" "%WEB_PY%"
+REM === Launch both scripts (no visible terminals) ===
+start /B "" "%PYTHON_EXE%" "%WEB_PY%"
+start /B "" "%PYTHON_EXE%" "%BACKEND_PY%"
 
-echo ✅ Launching backend processor...
-start "" "%PYTHON_EXE%" "%BACKEND_PY%"
-
-echo ✅ Both components launched.
 exit
