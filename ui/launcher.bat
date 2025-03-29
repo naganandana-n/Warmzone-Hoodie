@@ -1,5 +1,8 @@
+
 @echo off
 cd /d "%~dp0"
+
+del "shutdown_flag.json" >nul 2>&1
 
 REM === Detect architecture ===
 set "ARCH="
@@ -44,9 +47,8 @@ if not exist "%BACKEND_PY%" (
     exit /b 1
 )
 
-REM === Launch both scripts in persistent terminals ===
-start "Nana Web" cmd /k "%PYTHON_EXE% %WEB_PY%"
-start "Nana Backend" cmd /k "%PYTHON_EXE% %BACKEND_PY%"
+REM === Launch both scripts (no visible terminals) ===
+start /B "" "%PYTHON_EXE%" "%WEB_PY%"
+start /B "" "%PYTHON_EXE%" "%BACKEND_PY%"
 
-echo 🟢 Terminals launched. Close them manually when done.
 exit
