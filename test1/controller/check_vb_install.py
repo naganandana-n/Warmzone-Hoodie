@@ -49,7 +49,31 @@ def run_setup_ps1():
     ])
     time.sleep(2)
 
+def launch_web_server():
+    controller_dir = os.path.dirname(__file__)
+    python_dir = os.path.join(controller_dir, "python-embed")
+
+    # Auto-detect architecture
+    arch_map = {
+        "AMD64": "python-3.13.2-embed-amd64",
+        "x86": "python-3.13.2-embed-win32",
+        "ARM64": "python-3.13.2-embed-arm64"
+    }
+
+    arch = os.environ.get("PROCESSOR_ARCHITECTURE", "AMD64")
+    py_exe = os.path.join(python_dir, arch_map.get(arch, "python-3.13.2-embed-amd64"), "python.exe")
+    web_py = os.path.join(controller_dir, "web.py")
+
+    if not os.path.exists(py_exe) or not os.path.exists(web_py):
+        print("❌ Cannot launch web server: python.exe or web.py not found")
+        return
+
+    print("🚀 Launching web server...")
+    subprocess.Popen([py_exe, web_py], cwd=controller_dir)
+
 def open_browser_to_setup():
+    launch_web_server()
+    time.sleep(2)  # Give the web server time to start
     import webbrowser
     webbrowser.open("http://localhost:5000/vb-setup")
 

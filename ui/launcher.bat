@@ -1,6 +1,18 @@
 @echo off
 cd /d "%~dp0"
 
+REM === Run VB-Audio Cable setup checker first ===
+set "CHECK_VB_SETUP=%~dp0check_vb_install.py"
+set "PYTHON_BOOTSTRAP=%~dp0python-embed\python.exe"
+echo 🔍 Checking VB-Cable setup...
+"%PYTHON_BOOTSTRAP%" "%CHECK_VB_SETUP%"
+if errorlevel 1 (
+    echo ⚠️  VB-Cable setup required or not complete. Exiting launcher.
+    timeout /t 3 >nul
+    exit /b
+)
+
+REM === Clear shutdown flag ===
 del "shutdown_flag.json" >nul 2>&1
 
 REM === Detect architecture ===
@@ -26,7 +38,6 @@ set "PYTHON_DIR=%CONTROLLER_DIR%\python-embed\%ARCH%"
 set "PYTHON_EXE=%PYTHON_DIR%\python.exe"
 set "WEB_PY=%CONTROLLER_DIR%\web.py"
 set "BACKEND_PY=%CONTROLLER_DIR%\backend.py"
-set "CHECK_VB_SETUP=%CONTROLLER_DIR%\check_vb_install.py"
 
 REM === Validate files ===
 if not exist "%PYTHON_EXE%" (
@@ -47,16 +58,7 @@ if not exist "%BACKEND_PY%" (
     exit /b 1
 )
 
-REM === Run VB-Audio Cable check ===
-echo 🔍 Checking VB-Cable setup...
-"%PYTHON_EXE%" "%CHECK_VB_SETUP%"
-if errorlevel 1 (
-    echo ⚠️  VB-Cable setup required. Exiting launcher.
-    timeout /t 3 >nul
-    exit /b
-)
-
-REM === Launch both scripts (no visible terminals) ===
+REM === Launch web.py and backend.py ===
 start /B "" "%PYTHON_EXE%" "%WEB_PY%"
 start /B "" "%PYTHON_EXE%" "%BACKEND_PY%"
 

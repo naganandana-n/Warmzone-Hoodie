@@ -123,7 +123,7 @@ def get_serial_ports():
     ports = list(serial.tools.list_ports.comports())
     return [
         {"device": p.device, "description": p.description}
-        for p in ports if "serial" in p.description.lower()
+        for p in ports if "CH340" in p.description.lower()
     ]
 
 
