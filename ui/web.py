@@ -121,9 +121,12 @@ def shutdown():
 
 def get_serial_ports():
     ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        print(f"🔌 Detected port: {p.device} - {p.description}")
     return [
         {"device": p.device, "description": p.description}
-        for p in ports if "CH340" in p.description.lower()
+        for p in ports
+        if any(x in p.description.lower() for x in ["ch340", "serial", "usb", "cp210", "ftdi"])
     ]
 
 
