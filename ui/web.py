@@ -78,21 +78,14 @@ def vb_setup_done():
 @app.route("/open_sound_settings")
 def open_sound_settings():
     try:
-        nircmd_path = os.path.join(os.path.dirname(__file__), "audio", "nircmd.exe")
-        if os.path.exists(nircmd_path):
-            # Use 'exec show' to ensure it launches visibly
-            subprocess.Popen([
-                nircmd_path,
-                "exec", "show",
-                "C:\\Windows\\System32\\mmsys.cpl"
-            ])
-            print("🔊 Launched Sound Settings using nircmd.")
-            return jsonify({"status": "launched"})
-        else:
-            print("❌ nircmd.exe not found.")
-            return jsonify({"status": "error", "message": "nircmd.exe not found"}), 404
+        subprocess.Popen([
+            "powershell", "-WindowStyle", "Hidden",
+            "Start-Process", "mmsys.cpl", "-ArgumentList", "recording"
+        ], shell=True)
+        print("🔊 Opened Sound Settings via PowerShell.")
+        return jsonify({"status": "launched"})
     except Exception as e:
-        print(f"❌ Exception during sound settings launch: {e}")
+        print(f"❌ Failed to open sound settings: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
