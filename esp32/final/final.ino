@@ -856,7 +856,7 @@ void updateActuators() {
 #define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // Device state
 float mouse_speed = 0.0;
