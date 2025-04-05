@@ -1133,22 +1133,16 @@ void updateActuators() {
 //
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ArduinoJson.h>
 
 #define SERIAL_BAUD 115200
 
-// WiFi credentials
-const char* ssid = "Naganandana";
-const char* password = "Naganandana";
+const char* ssid = "Your_SSID";
+const char* password = "Your_PASSWORD";
 
-// Web server
 WebServer server(80);
 
-// JSON buffer for parsed data
-StaticJsonDocument<2048> parsedDoc;
-String rawInput = "No data yet";
-
-// Serial input buffer
+// Store last received serial line
+String lastSerialLine = "No serial data received yet.";
 String serialBuffer = "";
 
 void setup() {
@@ -1162,50 +1156,26 @@ void setup() {
   }
   Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
 
-  server.on("/", handleRoot);
+  server.on("/", []() {
+    String html = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='1'>";
+    html += "<style>body{font-family:monospace;background:#f4f4f4;padding:20px;} pre{padding:10px;background:#fff;border:1px solid #ccc;}</style>";
+    html += "<h2>ESP32 Serial Monitor</h2><pre>" + lastSerialLine + "</pre></body></html>";
+    server.send(200, "text/html", html);
+  });
+
   server.begin();
 }
 
 void loop() {
-  readSerialJSON();  // check for new serial input
-  server.handleClient();
-}
-
-void readSerialJSON() {
   while (Serial.available()) {
     char ch = Serial.read();
     if (ch == '\n') {
-      deserializeAndStore(serialBuffer);
+      lastSerialLine = serialBuffer;
       serialBuffer = "";
     } else if (ch != '\r') {
       serialBuffer += ch;
     }
   }
-}
 
-void deserializeAndStore(const String& jsonString) {
-  DeserializationError error = deserializeJson(parsedDoc, jsonString);
-  if (!error) {
-    rawInput = jsonString;
-  } else {
-    rawInput = "Error parsing: " + jsonString;
-  }
-}
-
-void handleRoot() {
-  String html = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='2'>";
-  html += "<style>body{font-family:Arial;margin:20px;} pre{background:#f4f4f4;padding:10px;border-radius:10px;}</style>";
-  html += "<h2>ESP32 Serial JSON Viewer</h2>";
-  html += "<h3>Raw Input:</h3><pre>" + rawInput + "</pre>";
-  html += "<h3>Parsed Values:</h3><pre>";
-
-  for (JsonPair kv : parsedDoc.as<JsonObject>()) {
-    html += kv.key().c_str();
-    html += ": ";
-    html += kv.value().as<String>();
-    html += "\n";
-  }
-
-  html += "</pre></body></html>";
-  server.send(200, "text/html", html);
+  server.handleClient();
 }
