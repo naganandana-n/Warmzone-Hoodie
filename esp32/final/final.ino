@@ -842,7 +842,6 @@ void updateActuators() {
 }
 
 */
-
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -854,16 +853,22 @@ void updateActuators() {
 #define VIBE2_PIN    27
 #define NUM_LEDS     60
 #define MAX_PWM      175
+#define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
+// Device state
+float mouse_speed = 0.0;
+int heater_values[3] = {0, 0, 0};
 bool use_mouse_control = false;
 bool vibration_on = false;
 bool sync_with_audio = false;
-int heater_values[3] = {0, 0, 0};
-float mouse_speed = 0.0;
-int audio_brightness = 0;  // Used only for sync_with_audio
+
+// NeoPixel state
+String neoMode = "static";  // hardcoded for now
+uint8_t colorR = 255, colorG = 0, colorB = 0;  // static red for testing
+unsigned long lastEffectTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -877,13 +882,13 @@ void setup() {
 }
 
 void loop() {
+  // Read JSON input
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
     StaticJsonDocument<768> doc;
     DeserializationError error = deserializeJson(doc, input);
     if (error) return;
 
-    // Read control flags
     use_mouse_control = doc["mouse"] | false;
     vibration_on = doc["vibration"] | false;
     sync_with_audio = doc["sync_with_audio"] | false;
@@ -897,21 +902,22 @@ void loop() {
     if (doc.containsKey("MouseSpeed")) {
       mouse_speed = doc["MouseSpeed"];
     }
-
-    if (doc.containsKey("Brightness")) {
-      audio_brightness = doc["Brightness"];  // still needed for sync_with_audio
-    }
-
-    // Note: LEDColors and screen/audio flags are ignored here
   }
 
-  // Always display solid red
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(0, 255, 0));  // Red = (G, R, B) since G & R are swapped
-  }
-  strip.show();
-
+  updateLEDStrip();
   updateActuators();
+}
+
+void updateLEDStrip() {
+  if (neoMode == "static") {
+    for (int i = 0; i < NUM_LEDS; i++) {
+      strip.setPixelColor(i, strip.Color(
+        (colorG * MAX_BRIGHTNESS) / 255,
+        (colorR * MAX_BRIGHTNESS) / 255,
+        (colorB * MAX_BRIGHTNESS) / 255));
+    }
+    strip.show();
+  }
 }
 
 void updateActuators() {
@@ -926,7 +932,7 @@ void updateActuators() {
     analogWrite(HEATER3_PIN, heater_values[2]);
   }
 
-  int vib_pwm = (vibration_on ? (sync_with_audio ? audio_brightness : 255) : 0);
+  int vib_pwm = (vibration_on ? (sync_with_audio ? 100 : 255) : 0);  // 100 as placeholder
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
