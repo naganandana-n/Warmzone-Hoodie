@@ -1020,6 +1020,8 @@ int fallback_r = 45;
 int fallback_g = 226;
 int fallback_b = 161;
 
+#define PEB_PIN 16  // LED Power Enable Pin (new)
+
 void setup() {
   Serial.begin(115200);
 
@@ -1028,6 +1030,8 @@ void setup() {
   pinMode(HEATER3_PIN, OUTPUT);
   pinMode(VIBE1_PIN, OUTPUT);
   pinMode(VIBE2_PIN, OUTPUT);
+  pinMode(PEB_PIN, OUTPUT);          // ADD THIS
+  digitalWrite(PEB_PIN, HIGH);       // AND THIS — powers the LED strip
 
   strip.begin();
   strip.setBrightness(DEFAULT_BRIGHTNESS);
