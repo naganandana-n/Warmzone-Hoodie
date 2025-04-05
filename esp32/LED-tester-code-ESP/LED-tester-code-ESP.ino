@@ -60,3 +60,53 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   }
 }
+
+/*
+
+#include <Adafruit_NeoPixel.h>
+
+#define LED_PIN    23
+#define NUM_LEDS   60
+#define MAX_BRIGHTNESS 125
+
+Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+int brightness = 0;
+bool increasing = true;
+unsigned long lastUpdate = 0;
+const int delayMs = 10;
+
+// Fallback color (brand pink: #E22DA1 swapped R/G)
+uint8_t fallback_r = 45;
+uint8_t fallback_g = 226;
+uint8_t fallback_b = 161;
+
+void setup() {
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
+}
+
+void loop() {
+  if (millis() - lastUpdate > delayMs) {
+    for (int i = 0; i < NUM_LEDS; i++) {
+      pixels.setPixelColor(i, pixels.Color(
+        (fallback_g * brightness * MAX_BRIGHTNESS) / 65025,
+        (fallback_r * brightness * MAX_BRIGHTNESS) / 65025,
+        (fallback_b * brightness * MAX_BRIGHTNESS) / 65025
+      ));
+    }
+    pixels.show();
+
+    if (increasing) {
+      brightness++;
+      if (brightness >= 255) increasing = false;
+    } else {
+      brightness--;
+      if (brightness <= 0) increasing = true;
+    }
+    lastUpdate = millis();
+  }
+}
+
+*/
