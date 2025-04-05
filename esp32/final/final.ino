@@ -841,7 +841,7 @@ void updateActuators() {
   analogWrite(VIBE2_PIN, vib_pwm);
 }
 
-*/
+
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -973,9 +973,9 @@ void updateActuators() {
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
+ */
 
-/*
-#include <ArduinoJson.h>
+ #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
 #define LED_PIN      23
@@ -984,7 +984,7 @@ void updateActuators() {
 #define HEATER3_PIN  12
 #define VIBE1_PIN    26
 #define VIBE2_PIN    27
-#define PEB_PIN      16  // Power Enable pin for LED strip
+#define PEB_PIN      16
 #define NUM_LEDS     60
 #define NUM_COLORS   6
 #define MAX_PWM      175
@@ -1018,8 +1018,8 @@ void setup() {
     pinMode(pin, OUTPUT);
   }
 
-  pinMode(PEB_PIN, OUTPUT);      // Turn on LED power rail
-  digitalWrite(PEB_PIN, HIGH);   // Always ON
+  pinMode(PEB_PIN, OUTPUT);
+  digitalWrite(PEB_PIN, HIGH);
 
   strip.begin();
   strip.clear();
@@ -1082,7 +1082,7 @@ void updateLEDStrip() {
       fallback_brightness += (breathe_increasing ? 1 : -1);
       if (fallback_brightness >= 255) breathe_increasing = false;
       if (fallback_brightness <= 0) breathe_increasing = true;
-      last_breathe_update = now;
+      last_breathe_update = millis();
     }
   } else if (screen_enabled && received_colors) {
     int section = NUM_LEDS / NUM_COLORS;
@@ -1115,13 +1115,17 @@ void updateActuators() {
     analogWrite(HEATER2_PIN, pwm_val);
     analogWrite(HEATER3_PIN, pwm_val);
   } else {
-    analogWrite(HEATER1_PIN, heater_values[0]);
-    analogWrite(HEATER2_PIN, heater_values[1]);
-    analogWrite(HEATER3_PIN, heater_values[2]);
+    // Map values 0–3 to PWM levels
+    for (int i = 0; i < 3; i++) {
+      int mapped_pwm = 0;
+      if (heater_values[i] == 1) mapped_pwm = 56;
+      else if (heater_values[i] == 2) mapped_pwm = 112;
+      else if (heater_values[i] == 3) mapped_pwm = 225;
+      analogWrite((i == 0 ? HEATER1_PIN : (i == 1 ? HEATER2_PIN : HEATER3_PIN)), mapped_pwm);
+    }
   }
 
   int vib_pwm = (vibration_on ? (sync_with_audio ? audio_brightness : 255) : 0);
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
-*/
