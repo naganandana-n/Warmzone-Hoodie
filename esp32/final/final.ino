@@ -1140,17 +1140,17 @@ void updateActuators() {
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// Flags
+// Flags for each key
 bool has_mouse = false;
 bool has_brightness = false;
 bool has_ledcolors = false;
 bool has_vibration = false;
 
-// Color map
-uint8_t orange[3] = {MAX_BRIGHTNESS, 64, 0};         // MouseSpeed
-uint8_t green[3]  = {0, MAX_BRIGHTNESS, 0};          // Brightness
-uint8_t yellow[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0}; // LEDColors
-uint8_t white[3]  = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS}; // Vibration
+// Fallback color values
+uint8_t color_mouse[3]     = {MAX_BRIGHTNESS, 64, 0};                         // Orange
+uint8_t color_brightness[3]= {0, MAX_BRIGHTNESS, 0};                          // Green
+uint8_t color_ledcolors[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0};            // Yellow
+uint8_t color_vibration[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS}; // White
 
 void setup() {
   Serial.begin(115200);
@@ -1173,43 +1173,36 @@ void loop() {
     has_vibration = false;
 
     // Check for each key
-    if (doc.containsKey("MouseSpeed")) {
-      has_mouse = true;
-    }
-    if (doc.containsKey("Brightness")) {
-      has_brightness = true;
-    }
-    if (doc.containsKey("LEDColors") && doc["LEDColors"].size() > 0) {
-      has_ledcolors = true;
-    }
-    if (doc.containsKey("vibration")) {
-      has_vibration = doc["vibration"]; // only true if it's enabled
-    }
+    if (doc.containsKey("MouseSpeed")) has_mouse = true;
+    if (doc.containsKey("Brightness")) has_brightness = true;
+    if (doc.containsKey("LEDColors") && doc["LEDColors"].size() > 0) has_ledcolors = true;
+    if (doc.containsKey("vibration") && doc["vibration"] == true) has_vibration = true;
   }
 
-  // Decide LED color based on active key(s)
-  uint8_t r = 0, g = 0, b = 0;
+  // Build RGB values
+  int r = 0, g = 0, b = 0;
 
   if (has_mouse) {
-    r += orange[0]; g += orange[1]; b += orange[2];
+    r += color_mouse[0]; g += color_mouse[1]; b += color_mouse[2];
   }
   if (has_brightness) {
-    r += green[0]; g += green[1]; b += green[2];
+    r += color_brightness[0]; g += color_brightness[1]; b += color_brightness[2];
   }
   if (has_ledcolors) {
-    r += yellow[0]; g += yellow[1]; b += yellow[2];
+    r += color_ledcolors[0]; g += color_ledcolors[1]; b += color_ledcolors[2];
   }
   if (has_vibration) {
-    r += white[0]; g += white[1]; b += white[2];
+    r += color_vibration[0]; g += color_vibration[1]; b += color_vibration[2];
   }
 
   // Cap values at 255
-  r = min(r, 255);
-  g = min(g, 255);
-  b = min(b, 255);
+  r = constrain(r, 0, 255);
+  g = constrain(g, 0, 255);
+  b = constrain(b, 0, 255);
 
+  // Set LEDs
   for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB ordering
+    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB format
   }
   strip.show();
 
