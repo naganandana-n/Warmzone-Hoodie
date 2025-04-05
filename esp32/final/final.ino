@@ -624,13 +624,33 @@ void fillWithFallbackColor() {
 */
 
 void fillWithFallbackColor() {
-  Serial.println("FORCE ON TEST");
-  strip.setBrightness(200);
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(255, 0, 0));  // G = 255, R = 0, B = 0
+  static int brightness = 0;
+  static bool increasing = true;
+  static unsigned long lastEffectTime = 0;
+  const int MAX_BREATHE = 125; // match webserver sketch
+  const int BREATHE_INTERVAL = 10;
+
+  if (millis() - lastEffectTime > BREATHE_INTERVAL) {
+    // Use fallback_r/g/b in the same style as your webserver sketch
+    for (int i = 0; i < NUM_LEDS; i++) {
+      strip.setPixelColor(i, strip.Color(
+        (fallback_g * brightness * MAX_BREATHE) / 65025,
+        (fallback_r * brightness * MAX_BREATHE) / 65025,
+        (fallback_b * brightness * MAX_BREATHE) / 65025
+      ));
+    }
+    strip.show();
+
+    if (increasing) {
+      brightness++;
+      if (brightness >= 255) increasing = false;
+    } else {
+      brightness--;
+      if (brightness <= 0) increasing = true;
+    }
+
+    lastEffectTime = millis();
   }
-  strip.show();
-  delay(1000);  // Just to slow it down
 }
 
 void fillWithScreenColors() {
