@@ -978,66 +978,24 @@ void updateActuators() {
 
 #include <Adafruit_NeoPixel.h>
 
-#define LED_PIN 23
-#define NUMPIXELS 60
-#define MAX_BRIGHTNESS 125
+#define LED_PIN    23       // Your data pin to WS2812
+#define NUMPIXELS  60       // Total number of LEDs
+#define BRIGHTNESS 100      // Set brightness (0–255)
 
 Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-String neoMode = "breathe";  // Options: "static", "breathe", "cycle", "off"
-uint8_t colorR = 255, colorG = 0, colorB = 127;
-unsigned long lastEffectTime = 0;
-
 void setup() {
   pixels.begin();
+  pixels.setBrightness(BRIGHTNESS);
   pixels.clear();
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(255, 0, 0)); // RED (R, G, B)
+  }
   pixels.show();
 }
 
 void loop() {
-  if (neoMode == "static") {
-    for (int i = 0; i < NUMPIXELS; i++) {
-      pixels.setPixelColor(i, pixels.Color((colorG * MAX_BRIGHTNESS) / 255, (colorR * MAX_BRIGHTNESS) / 255, (colorB * MAX_BRIGHTNESS) / 255));
-    }
-    pixels.show();
-
-  } else if (neoMode == "off") {
-    pixels.clear();
-    pixels.show();
-
-  } else if (neoMode == "cycle") {
-    if (millis() - lastEffectTime > 20) {
-      static uint16_t j = 0;
-      for (int i = 0; i < NUMPIXELS; i++) {
-        pixels.setPixelColor(i, pixels.gamma32(pixels.ColorHSV((i * 256 + j) & 65535)));
-      }
-      pixels.show();
-      j++;
-      lastEffectTime = millis();
-    }
-
-  } else if (neoMode == "breathe") {
-    static int brightness = 0;
-    static bool increasing = true;
-    if (millis() - lastEffectTime > 10) {
-      for (int i = 0; i < NUMPIXELS; i++) {
-        pixels.setPixelColor(i, pixels.Color(
-          (colorG * brightness * MAX_BRIGHTNESS) / 65025,
-          (colorR * brightness * MAX_BRIGHTNESS) / 65025,
-          (colorB * brightness * MAX_BRIGHTNESS) / 65025));
-      }
-      pixels.show();
-
-      if (increasing) {
-        brightness++;
-        if (brightness >= 255) increasing = false;
-      } else {
-        brightness--;
-        if (brightness <= 0) increasing = true;
-      }
-      lastEffectTime = millis();
-    }
-  }
+  // Nothing – lights stay red forever
 }
 
 */
