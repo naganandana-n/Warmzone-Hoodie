@@ -472,7 +472,6 @@ const int MIN_BREATHE = 20;       // Minimum brightness
 int breathe_brightness = MIN_BREATHE;
 bool breathe_increasing = true;
 const int BREATHE_STEP = 3;       // Smaller = slower breathing
-const int MIN_BREATHE = 20;       // Minimum brightness
 const int MAX_BREATHE = 200;      // Maximum brightness
 unsigned long last_breathe_update = 0;
 const int BREATHE_DELAY = 15;     // ms between breathe steps
