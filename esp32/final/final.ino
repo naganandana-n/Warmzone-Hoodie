@@ -448,8 +448,8 @@ if (audio_enabled) {
 #define NUM_LEDS     50
 #define NUM_COLORS   6
 #define MAX_PWM      175
-#define DEFAULT_BRIGHTNESS 200
-#define MOUSE_SPEED_THRESHOLD 2.0
+#define DEFAULT_BRIGHTNESS 200 // maximum brightness when audio intensity is at 255
+#define MOUSE_SPEED_THRESHOLD 2.0 // mouse threshold
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -464,6 +464,8 @@ bool audio_enabled = false;
 bool received_colors = false;
 int audio_brightness = 0;
 unsigned long last_audio_time = 0;
+
+bool sync_with_audio = false;
 
 // Breathing effect control
 int breathe_brightness = 0;
@@ -507,6 +509,7 @@ void loop() {
     screen_enabled = doc["screen"] | false;
     use_mouse_control = doc["mouse"] | false;
     vibration_on = doc["vibration"] | false;
+    sync_with_audio = doc["sync_with_audio"] | false;
 
     if (doc.containsKey("heaters")) {
       heater_values[0] = doc["heaters"][0];
@@ -544,7 +547,7 @@ void loop() {
 
 void updateLEDStrip() {
   unsigned long now = millis();
-  bool audio_timeout = audio_enabled && (audio_brightness == 0) && (now - last_audio_time > 10000);
+  bool audio_timeout = audio_enabled && (audio_brightness == 0) && (now - last_audio_time > 10000); // 10,000 ms (10 sec) is the time after which audio is considered time out.
   bool use_screen_colors = screen_enabled && received_colors;
   bool use_audio_only = audio_enabled && !screen_enabled;
 
@@ -628,7 +631,12 @@ void updateActuators() {
     analogWrite(HEATER3_PIN, heater_values[2]);
   }
 
-  int vib_pwm = vibration_on ? 255 : 0;
+  int vib_pwm = 0;
+  if (vibration_on) {
+    vib_pwm = sync_with_audio ? audio_brightness : 255;  // 0–255 intensity if syncing - this is the vibration strength
+    // vib_pwm = sync_with_audio ? max(audio_brightness, 30) : 255; // adds minimum vibration - even if the audio is 0
+  }
+
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
