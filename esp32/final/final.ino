@@ -501,9 +501,16 @@ void setup() {
 void loop() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
+    Serial.print("[Received JSON]: ");
+    Serial.println(input);  // 👈 This shows raw input
+
     StaticJsonDocument<768> doc;
     DeserializationError error = deserializeJson(doc, input);
-    if (error) return;
+    if (error) {
+      Serial.print("[Parse Error]: ");
+      Serial.println(error.c_str());
+      return;
+    }
 
     audio_enabled = doc["audio"] | false;
     screen_enabled = doc["screen"] | false;
@@ -511,18 +518,32 @@ void loop() {
     vibration_on = doc["vibration"] | false;
     sync_with_audio = doc["sync_with_audio"] | false;
 
+    Serial.print("[Flags] audio: ");
+    Serial.print(audio_enabled);
+    Serial.print(" | screen: ");
+    Serial.print(screen_enabled);
+    Serial.print(" | mouse: ");
+    Serial.print(use_mouse_control);
+    Serial.print(" | vibration: ");
+    Serial.println(vibration_on);
+
     if (doc.containsKey("heaters")) {
       heater_values[0] = doc["heaters"][0];
       heater_values[1] = doc["heaters"][1];
       heater_values[2] = doc["heaters"][2];
+      Serial.printf("Heaters: %d %d %d\n", heater_values[0], heater_values[1], heater_values[2]);
     }
 
     if (doc.containsKey("MouseSpeed")) {
       mouse_speed = doc["MouseSpeed"];
+      Serial.print("Mouse speed: ");
+      Serial.println(mouse_speed);
     }
 
     if (doc.containsKey("Brightness")) {
       audio_brightness = doc["Brightness"];
+      Serial.print("Audio Brightness: ");
+      Serial.println(audio_brightness);
       if (audio_brightness > 0) {
         last_audio_time = millis();
       }
@@ -536,12 +557,13 @@ void loop() {
         colors[i][2] = doc["LEDColors"][i]["B"];
       }
       received_colors = true;
+      Serial.println("Received LED Colors.");
     }
 
     updateLEDStrip();
-    updateActuators();}else {
-  updateLEDStrip();  // Show fallback or breathing if no input
-  
+    updateActuators();
+  } else {
+    updateLEDStrip();  // Show fallback or breathing if no input
   }
 }
 
