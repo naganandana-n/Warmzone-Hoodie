@@ -975,7 +975,6 @@ void updateActuators() {
 }
 
 /*
-
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -985,58 +984,46 @@ void updateActuators() {
 #define HEATER3_PIN  12
 #define VIBE1_PIN    26
 #define VIBE2_PIN    27
-#define PEB_PIN      16  // LED strip power enable pin
-
-#define NUM_LEDS     50
+#define PEB_PIN      16  // Power Enable pin for LED strip
+#define NUM_LEDS     60
 #define NUM_COLORS   6
 #define MAX_PWM      175
-#define DEFAULT_BRIGHTNESS 200
+#define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 int colors[NUM_COLORS][3];
-int led_brightness = DEFAULT_BRIGHTNESS;
-float mouse_speed = 0.0;
-int heater_values[3] = {0, 0, 0};
+int audio_brightness = 0;
 bool use_mouse_control = false;
 bool vibration_on = false;
-bool screen_enabled = false;
-bool audio_enabled = false;
+bool sync_with_audio = false;
+int heater_values[3] = {0, 0, 0};
+float mouse_speed = 0.0;
+bool screen_enabled = false, audio_enabled = false;
 bool received_colors = false;
-int audio_brightness = 0;
-unsigned long last_audio_time = 0;
 
-// Breathing effect control
-int breathe_brightness = 0;
-bool breathe_increasing = true;
-const int BREATHE_STEP = 3;
-const int MIN_BREATHE = 20;
-const int MAX_BREATHE = 200;
+// Fallback color
+int fallback_r = 45, fallback_g = 226, fallback_b = 161;
+
+// Breathing control
 unsigned long last_breathe_update = 0;
-const int BREATHE_DELAY = 15;
-
-// Default fallback color (#E22DA1)
-int fallback_r = 45;
-int fallback_g = 226;
-int fallback_b = 161;
+int fallback_brightness = 0;
+bool breathe_increasing = true;
 
 void setup() {
   Serial.begin(115200);
+  
+  for (int pin : {HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN}) {
+    pinMode(pin, OUTPUT);
+  }
 
-  pinMode(HEATER1_PIN, OUTPUT);
-  pinMode(HEATER2_PIN, OUTPUT);
-  pinMode(HEATER3_PIN, OUTPUT);
-  pinMode(VIBE1_PIN, OUTPUT);
-  pinMode(VIBE2_PIN, OUTPUT);
-  pinMode(PEB_PIN, OUTPUT);
-  digitalWrite(PEB_PIN, HIGH);  // Power on the LED strip
+  pinMode(PEB_PIN, OUTPUT);      // Turn on LED power rail
+  digitalWrite(PEB_PIN, HIGH);   // Always ON
 
   strip.begin();
-  strip.setBrightness(DEFAULT_BRIGHTNESS);
+  strip.clear();
   strip.show();
-
-  last_audio_time = millis();
 }
 
 void loop() {
@@ -1050,6 +1037,7 @@ void loop() {
     screen_enabled = doc["screen"] | false;
     use_mouse_control = doc["mouse"] | false;
     vibration_on = doc["vibration"] | false;
+    sync_with_audio = doc["sync_with_audio"] | false;
 
     if (doc.containsKey("heaters")) {
       heater_values[0] = doc["heaters"][0];
@@ -1063,12 +1051,8 @@ void loop() {
 
     if (doc.containsKey("Brightness")) {
       audio_brightness = doc["Brightness"];
-      if (audio_brightness > 0) {
-        last_audio_time = millis();
-      }
     }
 
-    received_colors = false;
     if (doc.containsKey("LEDColors") && doc["LEDColors"].size() > 0) {
       for (int i = 0; i < NUM_COLORS; i++) {
         colors[i][0] = doc["LEDColors"][i]["G"];
@@ -1077,78 +1061,51 @@ void loop() {
       }
       received_colors = true;
     }
-
-    updateLEDStrip();
-    updateActuators();
-  } else {
-    updateLEDStrip();
   }
+
+  updateLEDStrip();
+  updateActuators();
 }
 
 void updateLEDStrip() {
-  unsigned long now = millis();
-  bool audio_timeout = audio_enabled && (audio_brightness == 0) && (now - last_audio_time > 10000);
-  bool use_screen_colors = screen_enabled && received_colors;
-  bool use_audio_only = audio_enabled && !screen_enabled;
-
-  int brightness = DEFAULT_BRIGHTNESS;
-  if (audio_enabled && audio_brightness > 0) {
-    brightness = map(audio_brightness, 0, 255, 0, DEFAULT_BRIGHTNESS);
-  }
-  strip.setBrightness(brightness);
-
   if (!audio_enabled && !screen_enabled) {
-    fillWithFallbackColor();
-  } else if (use_screen_colors && (!audio_enabled || audio_timeout)) {
-    fillWithScreenColors();
-  } else if (use_audio_only) {
-    fillWithFallbackColor();
-  } else if (screen_enabled && audio_enabled && received_colors) {
-    fillWithScreenColors();
-  } else {
-    fillWithFallbackColor();
-  }
-}
-
-void fillWithFallbackColor() {
-  unsigned long now = millis();
-  if (!audio_enabled && !screen_enabled) {
-    if (now - last_breathe_update > BREATHE_DELAY) {
-      breathe_brightness += breathe_increasing ? BREATHE_STEP : -BREATHE_STEP;
-      if (breathe_brightness >= MAX_BREATHE) breathe_increasing = false;
-      if (breathe_brightness <= MIN_BREATHE) breathe_increasing = true;
+    // Fallback breathing mode
+    unsigned long now = millis();
+    if (now - last_breathe_update > 10) {
+      for (int i = 0; i < NUM_LEDS; i++) {
+        strip.setPixelColor(i, strip.Color(
+          (fallback_g * fallback_brightness * MAX_BRIGHTNESS) / 65025,
+          (fallback_r * fallback_brightness * MAX_BRIGHTNESS) / 65025,
+          (fallback_b * fallback_brightness * MAX_BRIGHTNESS) / 65025));
+      }
+      strip.show();
+      fallback_brightness += (breathe_increasing ? 1 : -1);
+      if (fallback_brightness >= 255) breathe_increasing = false;
+      if (fallback_brightness <= 0) breathe_increasing = true;
       last_breathe_update = now;
     }
-    strip.setBrightness(breathe_brightness);
-  } else {
-    strip.setBrightness(led_brightness);
-  }
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(fallback_g, fallback_r, fallback_b));
-  }
-  strip.show();
-}
-
-void fillWithScreenColors() {
-  int section = NUM_LEDS / NUM_COLORS;
-  int extra = NUM_LEDS % NUM_COLORS;
-
-  for (int i = 0; i < NUM_COLORS; i++) {
-    for (int j = 0; j < section; j++) {
-      int index = i * section + j;
-      if (index < NUM_LEDS) {
-        strip.setPixelColor(index, strip.Color(colors[i][0], colors[i][1], colors[i][2]));
+  } else if (screen_enabled && received_colors) {
+    int section = NUM_LEDS / NUM_COLORS;
+    for (int i = 0; i < NUM_COLORS; i++) {
+      for (int j = 0; j < section; j++) {
+        int index = i * section + j;
+        if (index < NUM_LEDS) {
+          strip.setPixelColor(index, strip.Color(colors[i][0], colors[i][1], colors[i][2]));
+        }
       }
     }
+    strip.show();
+  } else {
+    // Audio fallback if audio enabled
+    for (int i = 0; i < NUM_LEDS; i++) {
+      int scaled = map(audio_brightness, 0, 255, 0, MAX_BRIGHTNESS);
+      strip.setPixelColor(i, strip.Color(
+        (fallback_g * scaled) / 255,
+        (fallback_r * scaled) / 255,
+        (fallback_b * scaled) / 255));
+    }
+    strip.show();
   }
-
-  for (int i = 0; i < extra; i++) {
-    int index = NUM_COLORS * section + i;
-    strip.setPixelColor(index, strip.Color(colors[NUM_COLORS - 1][0], colors[NUM_COLORS - 1][1], colors[NUM_COLORS - 1][2]));
-  }
-
-  strip.show();
 }
 
 void updateActuators() {
@@ -1163,10 +1120,8 @@ void updateActuators() {
     analogWrite(HEATER3_PIN, heater_values[2]);
   }
 
-  int vib_pwm = vibration_on ? 255 : 0;
+  int vib_pwm = (vibration_on ? (sync_with_audio ? audio_brightness : 255) : 0);
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
-
-
 */
