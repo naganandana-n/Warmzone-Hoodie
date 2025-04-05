@@ -1131,80 +1131,130 @@ void updateActuators() {
 }
 
 //
+
+#include <WiFi.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
+#define SERIAL_BAUD 115200
 #define LED_PIN 23
 #define NUM_LEDS 60
 #define MAX_BRIGHTNESS 125
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// Flags for each key
+// WiFi credentials
+const char* ssid = "Your_SSID";
+const char* password = "Your_PASSWORD";
+
+// Web server
+WebServer server(80);
+
+// JSON buffer for parsed data
+StaticJsonDocument<2048> parsedDoc;
+String rawInput = "No data yet";
+
+// Serial input buffer
+String serialBuffer = "";
+
+// Flags
 bool has_mouse = false;
 bool has_brightness = false;
 bool has_ledcolors = false;
 bool has_vibration = false;
 
-// Fallback color values
-uint8_t color_mouse[3]     = {MAX_BRIGHTNESS, 64, 0};                         // Orange
-uint8_t color_brightness[3]= {0, MAX_BRIGHTNESS, 0};                          // Green
-uint8_t color_ledcolors[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0};            // Yellow
+// Color codes (GRB)
+uint8_t color_mouse[3]     = {MAX_BRIGHTNESS, 64, 0};       // Orange
+uint8_t color_brightness[3]= {0, MAX_BRIGHTNESS, 0};        // Green
+uint8_t color_ledcolors[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0}; // Yellow
 uint8_t color_vibration[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS}; // White
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(SERIAL_BAUD);
   strip.begin();
   strip.clear();
   strip.show();
+
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
+
+  server.on("/", handleRoot);
+  server.begin();
 }
 
 void loop() {
-  if (Serial.available()) {
-    String input = Serial.readStringUntil('\n');
-    StaticJsonDocument<3072> doc;
-    DeserializationError error = deserializeJson(doc, input);
-    if (error) return;
+  readSerialJSON();
+  server.handleClient();
+  updateLEDStrip();
+}
 
-    // Reset flags
-    has_mouse = false;
-    has_brightness = false;
-    has_ledcolors = false;
-    has_vibration = false;
-
-    // Check for each key
-    if (doc.containsKey("MouseSpeed")) has_mouse = true;
-    if (doc.containsKey("Brightness")) has_brightness = true;
-    if (doc.containsKey("LEDColors") && doc["LEDColors"].size() > 0) has_ledcolors = true;
-    if (doc.containsKey("vibration") && doc["vibration"] == true) has_vibration = true;
+void readSerialJSON() {
+  while (Serial.available()) {
+    char ch = Serial.read();
+    if (ch == '\n') {
+      deserializeAndStore(serialBuffer);
+      serialBuffer = "";
+    } else if (ch != '\r') {
+      serialBuffer += ch;
+    }
   }
+}
 
-  // Build RGB values
+void deserializeAndStore(const String& jsonString) {
+  DeserializationError error = deserializeJson(parsedDoc, jsonString);
+  if (!error) {
+    rawInput = jsonString;
+    has_mouse = parsedDoc.containsKey("MouseSpeed");
+    has_brightness = parsedDoc.containsKey("Brightness");
+    has_ledcolors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
+    has_vibration = parsedDoc["vibration"] | false;
+  } else {
+    rawInput = "Error parsing: " + jsonString;
+    has_mouse = has_brightness = has_ledcolors = has_vibration = false;
+  }
+}
+
+void updateLEDStrip() {
   int r = 0, g = 0, b = 0;
-
   if (has_mouse) {
-    r += color_mouse[0]; g += color_mouse[1]; b += color_mouse[2];
+    r += color_mouse[1]; g += color_mouse[0]; b += color_mouse[2];
   }
   if (has_brightness) {
-    r += color_brightness[0]; g += color_brightness[1]; b += color_brightness[2];
+    r += color_brightness[1]; g += color_brightness[0]; b += color_brightness[2];
   }
   if (has_ledcolors) {
-    r += color_ledcolors[0]; g += color_ledcolors[1]; b += color_ledcolors[2];
+    r += color_ledcolors[1]; g += color_ledcolors[0]; b += color_ledcolors[2];
   }
   if (has_vibration) {
-    r += color_vibration[0]; g += color_vibration[1]; b += color_vibration[2];
+    r += color_vibration[1]; g += color_vibration[0]; b += color_vibration[2];
   }
 
-  // Cap values at 255
   r = constrain(r, 0, 255);
   g = constrain(g, 0, 255);
   b = constrain(b, 0, 255);
 
-  // Set LEDs
   for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB format
+    strip.setPixelColor(i, strip.Color(g, r, b));
   }
   strip.show();
+}
 
-  delay(50);
+void handleRoot() {
+  String html = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='2'>";
+  html += "<style>body{font-family:Arial;margin:20px;} pre{background:#f4f4f4;padding:10px;border-radius:10px;}</style>";
+  html += "<h2>ESP32 Serial JSON Viewer</h2>";
+  html += "<h3>Raw Input:</h3><pre>" + rawInput + "</pre>";
+  html += "<h3>Parsed Flags:</h3><pre>";
+  html += "MouseSpeed: " + String(has_mouse ? "Yes" : "No") + "\n";
+  html += "Brightness: " + String(has_brightness ? "Yes" : "No") + "\n";
+  html += "LEDColors: " + String(has_ledcolors ? "Yes" : "No") + "\n";
+  html += "Vibration: " + String(has_vibration ? "Yes" : "No") + "\n";
+  html += "</pre></body></html>";
+  server.send(200, "text/html", html);
 }
