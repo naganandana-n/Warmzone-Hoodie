@@ -1131,7 +1131,6 @@ void updateActuators() {
 }
 
 //
-
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
@@ -1139,8 +1138,8 @@ void updateActuators() {
 
 #define SERIAL_BAUD 115200
 #define LED_PIN 23
+#define PEB_PIN 16
 #define NUM_LEDS 60
-#define MAX_BRIGHTNESS 125
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -1148,30 +1147,23 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 const char* ssid = "Your_SSID";
 const char* password = "Your_PASSWORD";
 
-// Web server
 WebServer server(80);
 
-// JSON buffer for parsed data
 StaticJsonDocument<2048> parsedDoc;
 String rawInput = "No data yet";
-
-// Serial input buffer
 String serialBuffer = "";
 
 // Flags
-bool has_mouse = false;
-bool has_brightness = false;
-bool has_ledcolors = false;
-bool has_vibration = false;
-
-// Color codes (GRB)
-uint8_t color_mouse[3]     = {MAX_BRIGHTNESS, 64, 0};       // Orange
-uint8_t color_brightness[3]= {0, MAX_BRIGHTNESS, 0};        // Green
-uint8_t color_ledcolors[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0}; // Yellow
-uint8_t color_vibration[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS}; // White
+bool hasMouseSpeed = false;
+bool hasBrightness = false;
+bool hasLEDColors = false;
+bool hasVibration = false;
 
 void setup() {
   Serial.begin(SERIAL_BAUD);
+  pinMode(PEB_PIN, OUTPUT);
+  digitalWrite(PEB_PIN, HIGH);  // Power on LED strip
+
   strip.begin();
   strip.clear();
   strip.show();
@@ -1191,7 +1183,7 @@ void setup() {
 void loop() {
   readSerialJSON();
   server.handleClient();
-  updateLEDStrip();
+  updateLEDs();
 }
 
 void readSerialJSON() {
@@ -1210,37 +1202,30 @@ void deserializeAndStore(const String& jsonString) {
   DeserializationError error = deserializeJson(parsedDoc, jsonString);
   if (!error) {
     rawInput = jsonString;
-    has_mouse = parsedDoc.containsKey("MouseSpeed");
-    has_brightness = parsedDoc.containsKey("Brightness");
-    has_ledcolors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
-    has_vibration = parsedDoc["vibration"] | false;
+
+    hasMouseSpeed = parsedDoc.containsKey("MouseSpeed");
+    hasBrightness = parsedDoc.containsKey("Brightness");
+    hasLEDColors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
+    hasVibration = parsedDoc["vibration"] | false;
   } else {
     rawInput = "Error parsing: " + jsonString;
-    has_mouse = has_brightness = has_ledcolors = has_vibration = false;
   }
 }
 
-void updateLEDStrip() {
-  int r = 0, g = 0, b = 0;
-  if (has_mouse) {
-    r += color_mouse[1]; g += color_mouse[0]; b += color_mouse[2];
-  }
-  if (has_brightness) {
-    r += color_brightness[1]; g += color_brightness[0]; b += color_brightness[2];
-  }
-  if (has_ledcolors) {
-    r += color_ledcolors[1]; g += color_ledcolors[0]; b += color_ledcolors[2];
-  }
-  if (has_vibration) {
-    r += color_vibration[1]; g += color_vibration[0]; b += color_vibration[2];
-  }
+void updateLEDs() {
+  uint8_t r = 0, g = 0, b = 0;
 
-  r = constrain(r, 0, 255);
-  g = constrain(g, 0, 255);
-  b = constrain(b, 0, 255);
+  if (hasMouseSpeed) { r += 255; g += 128; b += 0; }  // Orange
+  if (hasBrightness) { g += 255; }                    // Green
+  if (hasLEDColors) { r += 255; g += 255; }          // Yellow
+  if (hasVibration) { r += 255; g += 255; b += 255; } // White
+
+  r = min(r, 255);
+  g = min(g, 255);
+  b = min(b, 255);
 
   for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(g, r, b));
+    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB order
   }
   strip.show();
 }
@@ -1250,11 +1235,12 @@ void handleRoot() {
   html += "<style>body{font-family:Arial;margin:20px;} pre{background:#f4f4f4;padding:10px;border-radius:10px;}</style>";
   html += "<h2>ESP32 Serial JSON Viewer</h2>";
   html += "<h3>Raw Input:</h3><pre>" + rawInput + "</pre>";
-  html += "<h3>Parsed Flags:</h3><pre>";
-  html += "MouseSpeed: " + String(has_mouse ? "Yes" : "No") + "\n";
-  html += "Brightness: " + String(has_brightness ? "Yes" : "No") + "\n";
-  html += "LEDColors: " + String(has_ledcolors ? "Yes" : "No") + "\n";
-  html += "Vibration: " + String(has_vibration ? "Yes" : "No") + "\n";
+  html += "<h3>Flags:</h3><pre>";
+  html += "MouseSpeed: " + String(hasMouseSpeed) + "\n";
+  html += "Brightness: " + String(hasBrightness) + "\n";
+  html += "LEDColors: " + String(hasLEDColors) + "\n";
+  html += "Vibration: " + String(hasVibration) + "\n";
   html += "</pre></body></html>";
+
   server.send(200, "text/html", html);
 }
