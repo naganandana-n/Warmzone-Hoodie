@@ -978,24 +978,39 @@ void updateActuators() {
 
 #include <Adafruit_NeoPixel.h>
 
-#define LED_PIN    23       // Your data pin to WS2812
-#define NUMPIXELS  60       // Total number of LEDs
-#define BRIGHTNESS 100      // Set brightness (0–255)
+#define PIN         23         // GPIO connected to the NeoPixel data-in
+#define NUMPIXELS   60         // Number of NeoPixels
+#define MAX_BRIGHTNESS 125     // Manual brightness factor (0–255)
 
-Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
+// Red color
+uint8_t colorR = 255;
+uint8_t colorG = 0;
+uint8_t colorB = 0;
 
 void setup() {
+  Serial.begin(115200);
   pixels.begin();
-  pixels.setBrightness(BRIGHTNESS);
   pixels.clear();
+  Serial.println("Lighting up LEDs...");
+
   for (int i = 0; i < NUMPIXELS; i++) {
-    pixels.setPixelColor(i, pixels.Color(255, 0, 0)); // RED (R, G, B)
+    pixels.setPixelColor(
+      i,
+      pixels.Color(
+        (colorG * MAX_BRIGHTNESS) / 255,
+        (colorR * MAX_BRIGHTNESS) / 255,
+        (colorB * MAX_BRIGHTNESS) / 255
+      )
+    );
   }
-  pixels.show();
+
+  pixels.show();  // Send updated color to the strip
 }
 
 void loop() {
-  // Nothing – lights stay red forever
+  // Do nothing - LEDs stay on
 }
 
 */
