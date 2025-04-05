@@ -975,10 +975,10 @@ void updateActuators() {
 }
  */
 
- #include <WiFi.h>
+#include <WiFi.h>
 #include <WebServer.h>
-#include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
+#include <ArduinoJson.h>
 
 #define LED_PIN 23
 #define HEATER1_PIN 14
@@ -993,29 +993,29 @@ void updateActuators() {
 #define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
 const char* ssid = "Naganandana";
 const char* password = "Naganandana";
 
 WebServer server(80);
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 StaticJsonDocument<3072> parsedDoc;
 String rawInput = "No data yet";
 String serialBuffer = "";
 
 int colors[NUM_COLORS][3];
-bool received_colors = false;
 int audio_brightness = 0;
-bool screen_enabled = false;
-bool audio_enabled = false;
+bool use_mouse_control = false;
 bool vibration_on = false;
 bool sync_with_audio = false;
-bool use_mouse_control = false;
-float mouse_speed = 0.0;
 int heater_values[3] = {0, 0, 0};
+float mouse_speed = 0.0;
+bool received_colors = false;
+bool received_brightness = false;
 
-// Fallback color
 int fallback_r = 226, fallback_g = 45, fallback_b = 161;
+
 unsigned long last_breathe_update = 0;
 int fallback_brightness = 0;
 bool breathe_increasing = true;
@@ -1023,9 +1023,10 @@ bool breathe_increasing = true;
 void setup() {
   Serial.begin(115200);
 
-  for (int pin : {HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN, PEB_PIN}) {
+  for (int pin : { HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN }) {
     pinMode(pin, OUTPUT);
   }
+  pinMode(PEB_PIN, OUTPUT);
   digitalWrite(PEB_PIN, HIGH);
 
   strip.begin();
@@ -1036,6 +1037,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
+
   server.on("/", handleRoot);
   server.begin();
 }
@@ -1054,19 +1056,22 @@ void readSerialJSON() {
       DeserializationError error = deserializeJson(parsedDoc, serialBuffer);
       if (!error) {
         rawInput = serialBuffer;
-        received_colors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
+
         audio_brightness = parsedDoc["Brightness"] | 0;
-        screen_enabled = parsedDoc["screen"] | false;
-        audio_enabled = parsedDoc["audio"] | false;
+        received_brightness = parsedDoc.containsKey("Brightness");
+
         vibration_on = parsedDoc["vibration"] | false;
         sync_with_audio = parsedDoc["sync_with_audio"] | false;
+
         use_mouse_control = parsedDoc["mouse"] | false;
         mouse_speed = parsedDoc["MouseSpeed"] | 0.0;
-        if (parsedDoc.containsKey("heaters")) {
-          heater_values[0] = parsedDoc["heaters"][0];
-          heater_values[1] = parsedDoc["heaters"][1];
-          heater_values[2] = parsedDoc["heaters"][2];
-        }
+
+        heater_values[0] = parsedDoc["heaters"][0] | 0;
+        heater_values[1] = parsedDoc["heaters"][1] | 0;
+        heater_values[2] = parsedDoc["heaters"][2] | 0;
+
+        received_colors = parsedDoc.containsKey("LEDColors");
+
         if (received_colors) {
           for (int i = 0; i < NUM_COLORS; i++) {
             colors[i][0] = parsedDoc["LEDColors"][i]["G"];
@@ -1083,7 +1088,7 @@ void readSerialJSON() {
 }
 
 void updateLEDStrip() {
-  if (!audio_enabled && !screen_enabled) {
+  if (!received_colors && !received_brightness) {
     unsigned long now = millis();
     if (now - last_breathe_update > 10) {
       for (int i = 0; i < NUM_LEDS; i++) {
@@ -1096,9 +1101,9 @@ void updateLEDStrip() {
       fallback_brightness += (breathe_increasing ? 1 : -1);
       if (fallback_brightness >= 255) breathe_increasing = false;
       if (fallback_brightness <= 0) breathe_increasing = true;
-      last_breathe_update = now;
+      last_breathe_update = millis();
     }
-  } else if (screen_enabled && received_colors) {
+  } else if (received_colors) {
     int section = NUM_LEDS / NUM_COLORS;
     for (int i = 0; i < NUM_COLORS; i++) {
       for (int j = 0; j < section; j++) {
@@ -1109,9 +1114,9 @@ void updateLEDStrip() {
       }
     }
     strip.show();
-  } else if (audio_enabled) {
+  } else if (received_brightness) {
+    int scaled = map(audio_brightness, 0, 255, 0, MAX_BRIGHTNESS);
     for (int i = 0; i < NUM_LEDS; i++) {
-      int scaled = map(audio_brightness, 0, 255, 0, MAX_BRIGHTNESS);
       strip.setPixelColor(i, strip.Color(
         (fallback_g * scaled) / 255,
         (fallback_r * scaled) / 255,
