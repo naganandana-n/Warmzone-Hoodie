@@ -1133,40 +1133,33 @@ void updateActuators() {
 //
 #include <WiFi.h>
 #include <WebServer.h>
-#include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
+#include <ArduinoJson.h>
 
-#define SERIAL_BAUD 115200
-#define LED_PIN 23
-#define PEB_PIN 16
-#define NUM_LEDS 60
+#define PIN 23 // NeoPixel
+#define PEB 16 // Power enable pin
+#define NUMPIXELS 60
+#define MAX_BRIGHTNESS 125
 
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
-
-// WiFi credentials
-const char* ssid = "Your_SSID";
-const char* password = "Your_PASSWORD";
+const char* ssid = "Naganandana";
+const char* password = "Naganandana";
 
 WebServer server(80);
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 StaticJsonDocument<2048> parsedDoc;
 String rawInput = "No data yet";
 String serialBuffer = "";
 
-// Flags
-bool hasMouseSpeed = false;
-bool hasBrightness = false;
-bool hasLEDColors = false;
-bool hasVibration = false;
-
 void setup() {
-  Serial.begin(SERIAL_BAUD);
-  pinMode(PEB_PIN, OUTPUT);
-  digitalWrite(PEB_PIN, HIGH);  // Power on LED strip
+  Serial.begin(115200);
 
-  strip.begin();
-  strip.clear();
-  strip.show();
+  pinMode(PEB, OUTPUT);
+  digitalWrite(PEB, HIGH);
+
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
 
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
@@ -1182,15 +1175,20 @@ void setup() {
 
 void loop() {
   readSerialJSON();
+  updateLEDsFromParsed();
   server.handleClient();
-  updateLEDs();
 }
 
 void readSerialJSON() {
   while (Serial.available()) {
     char ch = Serial.read();
     if (ch == '\n') {
-      deserializeAndStore(serialBuffer);
+      DeserializationError error = deserializeJson(parsedDoc, serialBuffer);
+      if (!error) {
+        rawInput = serialBuffer;
+      } else {
+        rawInput = "Error parsing: " + serialBuffer;
+      }
       serialBuffer = "";
     } else if (ch != '\r') {
       serialBuffer += ch;
@@ -1198,36 +1196,30 @@ void readSerialJSON() {
   }
 }
 
-void deserializeAndStore(const String& jsonString) {
-  DeserializationError error = deserializeJson(parsedDoc, jsonString);
-  if (!error) {
-    rawInput = jsonString;
+void updateLEDsFromParsed() {
+  bool hasMouse = parsedDoc.containsKey("MouseSpeed") && parsedDoc["MouseSpeed"].as<float>() > 2.0;
+  bool hasAudio = parsedDoc.containsKey("Brightness") && parsedDoc["Brightness"].as<int>() > 0;
+  bool hasScreen = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
+  bool hasVibration = parsedDoc["vibration"] | false;
 
-    hasMouseSpeed = parsedDoc.containsKey("MouseSpeed");
-    hasBrightness = parsedDoc.containsKey("Brightness");
-    hasLEDColors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
-    hasVibration = parsedDoc["vibration"] | false;
-  } else {
-    rawInput = "Error parsing: " + jsonString;
+  // RGB values
+  int r = 0, g = 0, b = 0;
+
+  // Add colors
+  if (hasMouse)    { r += 255; g += 165; b += 0; }     // Orange
+  if (hasAudio)    { g += 255; }                      // Green
+  if (hasScreen)   { r += 255; g += 255; }            // Yellow
+  if (hasVibration){ r += 255; g += 255; b += 255; }  // White (full)
+
+  // Cap to MAX_BRIGHTNESS
+  r = (r > 255) ? 255 : r;
+  g = (g > 255) ? 255 : g;
+  b = (b > 255) ? 255 : b;
+
+  for (int i = 0; i < NUMPIXELS; i++) {
+    pixels.setPixelColor(i, pixels.Color(g * MAX_BRIGHTNESS / 255, r * MAX_BRIGHTNESS / 255, b * MAX_BRIGHTNESS / 255));
   }
-}
-
-void updateLEDs() {
-  uint8_t r = 0, g = 0, b = 0;
-
-  if (hasMouseSpeed) { r += 255; g += 128; b += 0; }  // Orange
-  if (hasBrightness) { g += 255; }                    // Green
-  if (hasLEDColors) { r += 255; g += 255; }          // Yellow
-  if (hasVibration) { r += 255; g += 255; b += 255; } // White
-
-  r = min(r, 255);
-  g = min(g, 255);
-  b = min(b, 255);
-
-  for (int i = 0; i < NUM_LEDS; i++) {
-    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB order
-  }
-  strip.show();
+  pixels.show();
 }
 
 void handleRoot() {
@@ -1235,12 +1227,15 @@ void handleRoot() {
   html += "<style>body{font-family:Arial;margin:20px;} pre{background:#f4f4f4;padding:10px;border-radius:10px;}</style>";
   html += "<h2>ESP32 Serial JSON Viewer</h2>";
   html += "<h3>Raw Input:</h3><pre>" + rawInput + "</pre>";
-  html += "<h3>Flags:</h3><pre>";
-  html += "MouseSpeed: " + String(hasMouseSpeed) + "\n";
-  html += "Brightness: " + String(hasBrightness) + "\n";
-  html += "LEDColors: " + String(hasLEDColors) + "\n";
-  html += "Vibration: " + String(hasVibration) + "\n";
-  html += "</pre></body></html>";
+  html += "<h3>Parsed Values:</h3><pre>";
 
+  for (JsonPair kv : parsedDoc.as<JsonObject>()) {
+    html += kv.key().c_str();
+    html += ": ";
+    html += kv.value().as<String>();
+    html += "\n";
+  }
+
+  html += "</pre></body></html>";
   server.send(200, "text/html", html);
 }
