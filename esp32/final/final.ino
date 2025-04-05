@@ -1131,87 +1131,81 @@ void updateActuators() {
 }
 
 //
-
-// ESP32 Web Server to Display Live Serial JSON Data (Styled + Auto-refresh)
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
 
+#define SERIAL_BAUD 115200
+
+// WiFi credentials
 const char* ssid = "Naganandana";
 const char* password = "Naganandana";
 
+// Web server
 WebServer server(80);
 
-String latestJson = "{}";
+// JSON buffer for parsed data
+StaticJsonDocument<2048> parsedDoc;
+String rawInput = "No data yet";
 
-int brightness = 0;
-float mouseSpeed = 0.0;
-bool vibration = false;
-bool syncAudio = false;
-bool audio = false;
-bool screen = false;
-bool mouse = false;
+// Serial input buffer
+String serialBuffer = "";
 
 void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
+  Serial.begin(SERIAL_BAUD);
 
+  WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500); Serial.print(".");
+    delay(500);
+    Serial.print(".");
   }
-  Serial.println("\nConnected! IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
 
   server.on("/", handleRoot);
   server.begin();
 }
 
 void loop() {
+  readSerialJSON();  // check for new serial input
   server.handleClient();
+}
 
-  if (Serial.available()) {
-    String input = Serial.readStringUntil('\n');
-    StaticJsonDocument<2048> doc;
-    DeserializationError error = deserializeJson(doc, input);
-    if (!error) {
-      latestJson = input;
-      brightness = doc["Brightness"] | 0;
-      mouseSpeed = doc["MouseSpeed"] | 0.0;
-      vibration = doc["vibration"] | false;
-      syncAudio = doc["sync_with_audio"] | false;
-      audio = doc["audio"] | false;
-      screen = doc["screen"] | false;
-      mouse = doc["mouse"] | false;
+void readSerialJSON() {
+  while (Serial.available()) {
+    char ch = Serial.read();
+    if (ch == '\n') {
+      deserializeAndStore(serialBuffer);
+      serialBuffer = "";
+    } else if (ch != '\r') {
+      serialBuffer += ch;
     }
   }
 }
 
-void handleRoot() {
-  String html = R"rawliteral(
-  <!DOCTYPE html><html><head>
-    <meta http-equiv="refresh" content="2" />
-    <style>
-      body { font-family: Arial; background: #f4f4f4; padding: 20px; }
-      h2 { color: #333; }
-      .data-box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-      .label { font-weight: bold; }
-    </style>
-  </head><body>
-    <h2>ESP32 Live Data Dashboard</h2>
-    <div class='data-box'>
-      <div><span class='label'>Brightness:</span> )rawliteral" + String(brightness) + R"rawliteral(</div>
-      <div><span class='label'>Mouse Speed:</span> )rawliteral" + String(mouseSpeed) + R"rawliteral(</div>
-      <div><span class='label'>Vibration:</span> )rawliteral" + String(vibration ? "ON" : "OFF") + R"rawliteral(</div>
-      <div><span class='label'>Sync with Audio:</span> )rawliteral" + String(syncAudio ? "Yes" : "No") + R"rawliteral(</div>
-      <div><span class='label'>Audio Enabled:</span> )rawliteral" + String(audio ? "Yes" : "No") + R"rawliteral(</div>
-      <div><span class='label'>Screen Enabled:</span> )rawliteral" + String(screen ? "Yes" : "No") + R"rawliteral(</div>
-      <div><span class='label'>Mouse Control:</span> )rawliteral" + String(mouse ? "Yes" : "No") + R"rawliteral(</div>
-    </div>
-    <h3>Raw JSON:</h3>
-    <pre>)rawliteral" + latestJson + R"rawliteral(</pre>
-  </body></html>
-  )rawliteral";
+void deserializeAndStore(const String& jsonString) {
+  DeserializationError error = deserializeJson(parsedDoc, jsonString);
+  if (!error) {
+    rawInput = jsonString;
+  } else {
+    rawInput = "Error parsing: " + jsonString;
+  }
+}
 
+void handleRoot() {
+  String html = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='2'>";
+  html += "<style>body{font-family:Arial;margin:20px;} pre{background:#f4f4f4;padding:10px;border-radius:10px;}</style>";
+  html += "<h2>ESP32 Serial JSON Viewer</h2>";
+  html += "<h3>Raw Input:</h3><pre>" + rawInput + "</pre>";
+  html += "<h3>Parsed Values:</h3><pre>";
+
+  for (JsonPair kv : parsedDoc.as<JsonObject>()) {
+    html += kv.key().c_str();
+    html += ": ";
+    html += kv.value().as<String>();
+    html += "\n";
+  }
+
+  html += "</pre></body></html>";
   server.send(200, "text/html", html);
 }
