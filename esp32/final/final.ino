@@ -626,17 +626,16 @@ void fillWithFallbackColor() {
 void fillWithFallbackColor() {
   static int brightness = 0;
   static bool increasing = true;
-  static unsigned long lastEffectTime = 0;
-  const int MAX_BREATHE = 125; // match webserver sketch
-  const int BREATHE_INTERVAL = 10;
+  unsigned long now = millis();
 
-  if (millis() - lastEffectTime > BREATHE_INTERVAL) {
-    // Use fallback_r/g/b in the same style as your webserver sketch
+  Serial.println("Fallback breathing mode active");
+
+  if (now - last_breathe_update > 10) {
     for (int i = 0; i < NUM_LEDS; i++) {
       strip.setPixelColor(i, strip.Color(
-        (fallback_g * brightness * MAX_BREATHE) / 65025,
-        (fallback_r * brightness * MAX_BREATHE) / 65025,
-        (fallback_b * brightness * MAX_BREATHE) / 65025
+        (fallback_g * brightness * 125) / 65025,
+        (fallback_r * brightness * 125) / 65025,
+        (fallback_b * brightness * 125) / 65025
       ));
     }
     strip.show();
@@ -648,8 +647,7 @@ void fillWithFallbackColor() {
       brightness--;
       if (brightness <= 0) increasing = true;
     }
-
-    lastEffectTime = millis();
+    last_breathe_update = now;
   }
 }
 
