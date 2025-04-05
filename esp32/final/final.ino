@@ -468,6 +468,7 @@ unsigned long last_audio_time = 0;
 bool sync_with_audio = false;
 
 // Breathing effect control
+const int MIN_BREATHE = 20;       // Minimum brightness
 int breathe_brightness = MIN_BREATHE;
 bool breathe_increasing = true;
 const int BREATHE_STEP = 3;       // Smaller = slower breathing
