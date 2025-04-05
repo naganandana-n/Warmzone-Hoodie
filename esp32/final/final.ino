@@ -1029,7 +1029,7 @@ void setup() {
 void loop() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
-    StaticJsonDocument<768> doc;
+    StaticJsonDocument<3072> doc;
     DeserializationError error = deserializeJson(doc, input);
     if (error) return;
 
@@ -1132,129 +1132,86 @@ void updateActuators() {
 
 //
 
+// ESP32 Web Server to Display Live Serial JSON Data (Styled + Auto-refresh)
+#include <WiFi.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
-#include <Adafruit_NeoPixel.h>
 
-#define LED_PIN 23
-#define HEATER1_PIN 14
-#define HEATER2_PIN 13
-#define HEATER3_PIN 12
-#define VIBE1_PIN 26
-#define VIBE2_PIN 27
-#define PEB_PIN 16
-#define NUM_LEDS 60
-#define MAX_PWM 175
-#define MOUSE_SPEED_THRESHOLD 2.0
+const char* ssid = "Naganandana";
+const char* password = "Naganandana";
 
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+WebServer server(80);
 
-bool audio_enabled = false, screen_enabled = false;
-bool use_mouse_control = false, vibration_on = false, sync_with_audio = false;
-float mouse_speed = 0.0;
-int heater_values[3] = { 0, 0, 0 };
-int audio_brightness = 0;
+String latestJson = "{}";
 
-// Breathing fallback
-int fallback_r = 226, fallback_g = 45, fallback_b = 161;
-int fallback_brightness = 0;
-bool breathe_increasing = true;
-unsigned long last_breathe_update = 0;
+int brightness = 0;
+float mouseSpeed = 0.0;
+bool vibration = false;
+bool syncAudio = false;
+bool audio = false;
+bool screen = false;
+bool mouse = false;
 
 void setup() {
   Serial.begin(115200);
+  WiFi.begin(ssid, password);
 
-  for (int pin : { HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN }) {
-    pinMode(pin, OUTPUT);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500); Serial.print(".");
   }
+  Serial.println("\nConnected! IP address: ");
+  Serial.println(WiFi.localIP());
 
-  pinMode(PEB_PIN, OUTPUT);
-  digitalWrite(PEB_PIN, HIGH);
-
-  strip.begin();
-  strip.clear();
-  strip.show();
+  server.on("/", handleRoot);
+  server.begin();
 }
 
 void loop() {
+  server.handleClient();
+
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
-    StaticJsonDocument<768> doc;
-    if (deserializeJson(doc, input)) return;
-
-    audio_enabled = doc["audio"] | false;
-    screen_enabled = doc["screen"] | false;
-    use_mouse_control = doc["mouse"] | false;
-    vibration_on = doc["vibration"] | false;
-    sync_with_audio = doc["sync_with_audio"] | false;
-
-    if (doc.containsKey("heaters")) {
-      heater_values[0] = doc["heaters"][0];
-      heater_values[1] = doc["heaters"][1];
-      heater_values[2] = doc["heaters"][2];
-    }
-
-    if (doc.containsKey("MouseSpeed")) {
-      mouse_speed = doc["MouseSpeed"];
-    }
-
-    if (doc.containsKey("Brightness")) {
-      audio_brightness = doc["Brightness"];
-    }
-  }
-
-  updateLEDStrip();
-  updateActuators();
-}
-
-void updateLEDStrip() {
-  uint8_t r = 0, g = 0, b = 0;
-
-  if (audio_enabled)       { r = 255; g = 0;   b = 0;   }  // Red
-  else if (screen_enabled) { r = 0;   g = 255; b = 0;   }  // Green
-  else if (use_mouse_control) { r = 255; g = 255; b = 0; } // Yellow
-  else if (vibration_on)   { r = 255; g = 128; b = 0;   }  // Orange
-
-  if (r + g + b > 0) {
-    for (int i = 0; i < NUM_LEDS; i++) {
-      strip.setPixelColor(i, strip.Color(g, r, b)); // GRB order
-    }
-    strip.show();
-  } else {
-    // fallback breathing
-    unsigned long now = millis();
-    if (now - last_breathe_update > 10) {
-      for (int i = 0; i < NUM_LEDS; i++) {
-        strip.setPixelColor(i, strip.Color(
-          (fallback_g * fallback_brightness) / 255,
-          (fallback_r * fallback_brightness) / 255,
-          (fallback_b * fallback_brightness) / 255));
-      }
-      strip.show();
-      fallback_brightness += (breathe_increasing ? 1 : -1);
-      if (fallback_brightness >= 255) breathe_increasing = false;
-      if (fallback_brightness <= 0) breathe_increasing = true;
-      last_breathe_update = now;
+    StaticJsonDocument<2048> doc;
+    DeserializationError error = deserializeJson(doc, input);
+    if (!error) {
+      latestJson = input;
+      brightness = doc["Brightness"] | 0;
+      mouseSpeed = doc["MouseSpeed"] | 0.0;
+      vibration = doc["vibration"] | false;
+      syncAudio = doc["sync_with_audio"] | false;
+      audio = doc["audio"] | false;
+      screen = doc["screen"] | false;
+      mouse = doc["mouse"] | false;
     }
   }
 }
 
-void updateActuators() {
-  if (use_mouse_control) {
-    int pwm_val = (mouse_speed < MOUSE_SPEED_THRESHOLD) ? 0 : int((mouse_speed / 5.0) * MAX_PWM);
-    analogWrite(HEATER1_PIN, pwm_val);
-    analogWrite(HEATER2_PIN, pwm_val);
-    analogWrite(HEATER3_PIN, pwm_val);
-  } else {
-    for (int i = 0; i < 3; i++) {
-      int mapped_pwm = 0;
-      if (heater_values[i] == 1) mapped_pwm = 56;
-      else if (heater_values[i] == 2) mapped_pwm = 112;
-      else if (heater_values[i] == 3) mapped_pwm = 225;
-      analogWrite((i == 0 ? HEATER1_PIN : (i == 1 ? HEATER2_PIN : HEATER3_PIN)), mapped_pwm);
-    }
-  }
+void handleRoot() {
+  String html = R"rawliteral(
+  <!DOCTYPE html><html><head>
+    <meta http-equiv="refresh" content="2" />
+    <style>
+      body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+      h2 { color: #333; }
+      .data-box { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+      .label { font-weight: bold; }
+    </style>
+  </head><body>
+    <h2>ESP32 Live Data Dashboard</h2>
+    <div class='data-box'>
+      <div><span class='label'>Brightness:</span> )rawliteral" + String(brightness) + R"rawliteral(</div>
+      <div><span class='label'>Mouse Speed:</span> )rawliteral" + String(mouseSpeed) + R"rawliteral(</div>
+      <div><span class='label'>Vibration:</span> )rawliteral" + String(vibration ? "ON" : "OFF") + R"rawliteral(</div>
+      <div><span class='label'>Sync with Audio:</span> )rawliteral" + String(syncAudio ? "Yes" : "No") + R"rawliteral(</div>
+      <div><span class='label'>Audio Enabled:</span> )rawliteral" + String(audio ? "Yes" : "No") + R"rawliteral(</div>
+      <div><span class='label'>Screen Enabled:</span> )rawliteral" + String(screen ? "Yes" : "No") + R"rawliteral(</div>
+      <div><span class='label'>Mouse Control:</span> )rawliteral" + String(mouse ? "Yes" : "No") + R"rawliteral(</div>
+    </div>
+    <h3>Raw JSON:</h3>
+    <pre>)rawliteral" + latestJson + R"rawliteral(</pre>
+  </body></html>
+  )rawliteral";
 
-  int vib_pwm = (vibration_on ? (sync_with_audio ? audio_brightness : 255) : 0);
-  analogWrite(VIBE1_PIN, vib_pwm);
-  analogWrite(VIBE2_PIN, vib_pwm);
+  server.send(200, "text/html", html);
 }
