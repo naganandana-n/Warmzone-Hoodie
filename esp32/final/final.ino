@@ -597,6 +597,7 @@ void updateLEDStrip() {
   }
 }
 
+/*
 void fillWithFallbackColor() {
   Serial.println("Fallback breathing mode active");
   unsigned long now = millis();
@@ -619,6 +620,17 @@ void fillWithFallbackColor() {
     strip.setPixelColor(i, strip.Color(fallback_g, fallback_r, fallback_b));
   }
   strip.show();
+}
+*/
+
+void fillWithFallbackColor() {
+  Serial.println("FORCE ON TEST");
+  strip.setBrightness(200);
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(255, 0, 0));  // G = 255, R = 0, B = 0
+  }
+  strip.show();
+  delay(1000);  // Just to slow it down
 }
 
 void fillWithScreenColors() {
