@@ -974,65 +974,58 @@ void updateActuators() {
   analogWrite(VIBE2_PIN, vib_pwm);
 }
  */
-#include <WiFi.h>
-#include <WebServer.h>
-#include <Adafruit_NeoPixel.h>
-#include <ArduinoJson.h>
 
-// === Pin Definitions ===
-#define LED_PIN     23
+ #include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <Adafruit_NeoPixel.h>
+
+#define LED_PIN 23
 #define HEATER1_PIN 14
 #define HEATER2_PIN 13
 #define HEATER3_PIN 12
-#define VIBE1_PIN   26
-#define VIBE2_PIN   27
-#define PEB_PIN     16
-#define NUM_LEDS    60
-#define NUM_COLORS  6
-
-// === Constants ===
-#define MAX_PWM         175
-#define MAX_BRIGHTNESS  125
+#define VIBE1_PIN 26
+#define VIBE2_PIN 27
+#define PEB_PIN 16
+#define NUM_LEDS 60
+#define NUM_COLORS 6
+#define MAX_PWM 175
+#define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
-// === WiFi Credentials ===
 const char* ssid = "Naganandana";
 const char* password = "Naganandana";
 
-// === Objects ===
 WebServer server(80);
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// === State Variables ===
+StaticJsonDocument<3072> parsedDoc;
+String rawInput = "No data yet";
+String serialBuffer = "";
+
 int colors[NUM_COLORS][3];
+bool received_colors = false;
 int audio_brightness = 0;
-bool use_mouse_control = false;
+bool screen_enabled = false;
+bool audio_enabled = false;
 bool vibration_on = false;
 bool sync_with_audio = false;
-int heater_values[3] = {0, 0, 0};
+bool use_mouse_control = false;
 float mouse_speed = 0.0;
-bool screen_enabled = false, audio_enabled = false;
-bool received_colors = false;
+int heater_values[3] = {0, 0, 0};
 
-// === Fallback breathing ===
+// Fallback color
+int fallback_r = 226, fallback_g = 45, fallback_b = 161;
 unsigned long last_breathe_update = 0;
 int fallback_brightness = 0;
 bool breathe_increasing = true;
-int fallback_r = 226, fallback_g = 45, fallback_b = 161;
-
-// === JSON Viewer State ===
-StaticJsonDocument<2048> parsedDoc;
-String rawInput = "No data yet";
-String serialBuffer = "";
 
 void setup() {
   Serial.begin(115200);
 
-  for (int pin : {HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN}) {
+  for (int pin : {HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN, PEB_PIN}) {
     pinMode(pin, OUTPUT);
   }
-
-  pinMode(PEB_PIN, OUTPUT);
   digitalWrite(PEB_PIN, HIGH);
 
   strip.begin();
@@ -1040,13 +1033,9 @@ void setup() {
   strip.show();
 
   WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
   }
-  Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
-
   server.on("/", handleRoot);
   server.begin();
 }
@@ -1065,24 +1054,19 @@ void readSerialJSON() {
       DeserializationError error = deserializeJson(parsedDoc, serialBuffer);
       if (!error) {
         rawInput = serialBuffer;
-        // Extract keys
-        audio_enabled = parsedDoc["audio"] | false;
+        received_colors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
+        audio_brightness = parsedDoc["Brightness"] | 0;
         screen_enabled = parsedDoc["screen"] | false;
-        use_mouse_control = parsedDoc["mouse"] | false;
+        audio_enabled = parsedDoc["audio"] | false;
         vibration_on = parsedDoc["vibration"] | false;
         sync_with_audio = parsedDoc["sync_with_audio"] | false;
+        use_mouse_control = parsedDoc["mouse"] | false;
+        mouse_speed = parsedDoc["MouseSpeed"] | 0.0;
         if (parsedDoc.containsKey("heaters")) {
           heater_values[0] = parsedDoc["heaters"][0];
           heater_values[1] = parsedDoc["heaters"][1];
           heater_values[2] = parsedDoc["heaters"][2];
         }
-        if (parsedDoc.containsKey("MouseSpeed")) {
-          mouse_speed = parsedDoc["MouseSpeed"];
-        }
-        if (parsedDoc.containsKey("Brightness")) {
-          audio_brightness = parsedDoc["Brightness"];
-        }
-        received_colors = parsedDoc.containsKey("LEDColors") && parsedDoc["LEDColors"].size() > 0;
         if (received_colors) {
           for (int i = 0; i < NUM_COLORS; i++) {
             colors[i][0] = parsedDoc["LEDColors"][i]["G"];
@@ -1090,8 +1074,6 @@ void readSerialJSON() {
             colors[i][2] = parsedDoc["LEDColors"][i]["B"];
           }
         }
-      } else {
-        rawInput = "Parse error: " + serialBuffer;
       }
       serialBuffer = "";
     } else if (ch != '\r') {
@@ -1127,10 +1109,13 @@ void updateLEDStrip() {
       }
     }
     strip.show();
-  } else {
-    int scaled = map(audio_brightness, 0, 255, 0, MAX_BRIGHTNESS);
+  } else if (audio_enabled) {
     for (int i = 0; i < NUM_LEDS; i++) {
-      strip.setPixelColor(i, strip.Color((fallback_g * scaled) / 255, (fallback_r * scaled) / 255, (fallback_b * scaled) / 255));
+      int scaled = map(audio_brightness, 0, 255, 0, MAX_BRIGHTNESS);
+      strip.setPixelColor(i, strip.Color(
+        (fallback_g * scaled) / 255,
+        (fallback_r * scaled) / 255,
+        (fallback_b * scaled) / 255));
     }
     strip.show();
   }
