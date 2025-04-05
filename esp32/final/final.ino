@@ -1131,51 +1131,87 @@ void updateActuators() {
 }
 
 //
-#include <WiFi.h>
-#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <Adafruit_NeoPixel.h>
 
-#define SERIAL_BAUD 115200
+#define LED_PIN 23
+#define NUM_LEDS 60
+#define MAX_BRIGHTNESS 125
 
-const char* ssid = "Your_SSID";
-const char* password = "Your_PASSWORD";
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-WebServer server(80);
+// Flags
+bool has_mouse = false;
+bool has_brightness = false;
+bool has_ledcolors = false;
+bool has_vibration = false;
 
-// Store last received serial line
-String lastSerialLine = "No serial data received yet.";
-String serialBuffer = "";
+// Color map
+uint8_t orange[3] = {MAX_BRIGHTNESS, 64, 0};         // MouseSpeed
+uint8_t green[3]  = {0, MAX_BRIGHTNESS, 0};          // Brightness
+uint8_t yellow[3] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, 0}; // LEDColors
+uint8_t white[3]  = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS}; // Vibration
 
 void setup() {
-  Serial.begin(SERIAL_BAUD);
-
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected! IP: " + WiFi.localIP().toString());
-
-  server.on("/", []() {
-    String html = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='1'>";
-    html += "<style>body{font-family:monospace;background:#f4f4f4;padding:20px;} pre{padding:10px;background:#fff;border:1px solid #ccc;}</style>";
-    html += "<h2>ESP32 Serial Monitor</h2><pre>" + lastSerialLine + "</pre></body></html>";
-    server.send(200, "text/html", html);
-  });
-
-  server.begin();
+  Serial.begin(115200);
+  strip.begin();
+  strip.clear();
+  strip.show();
 }
 
 void loop() {
-  while (Serial.available()) {
-    char ch = Serial.read();
-    if (ch == '\n') {
-      lastSerialLine = serialBuffer;
-      serialBuffer = "";
-    } else if (ch != '\r') {
-      serialBuffer += ch;
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    StaticJsonDocument<3072> doc;
+    DeserializationError error = deserializeJson(doc, input);
+    if (error) return;
+
+    // Reset flags
+    has_mouse = false;
+    has_brightness = false;
+    has_ledcolors = false;
+    has_vibration = false;
+
+    // Check for each key
+    if (doc.containsKey("MouseSpeed")) {
+      has_mouse = true;
+    }
+    if (doc.containsKey("Brightness")) {
+      has_brightness = true;
+    }
+    if (doc.containsKey("LEDColors") && doc["LEDColors"].size() > 0) {
+      has_ledcolors = true;
+    }
+    if (doc.containsKey("vibration")) {
+      has_vibration = doc["vibration"]; // only true if it's enabled
     }
   }
 
-  server.handleClient();
+  // Decide LED color based on active key(s)
+  uint8_t r = 0, g = 0, b = 0;
+
+  if (has_mouse) {
+    r += orange[0]; g += orange[1]; b += orange[2];
+  }
+  if (has_brightness) {
+    r += green[0]; g += green[1]; b += green[2];
+  }
+  if (has_ledcolors) {
+    r += yellow[0]; g += yellow[1]; b += yellow[2];
+  }
+  if (has_vibration) {
+    r += white[0]; g += white[1]; b += white[2];
+  }
+
+  // Cap values at 255
+  r = min(r, 255);
+  g = min(g, 255);
+  b = min(b, 255);
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(g, r, b));  // GRB ordering
+  }
+  strip.show();
+
+  delay(50);
 }
