@@ -842,6 +842,7 @@ void updateActuators() {
 }
 
 */
+
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -876,9 +877,9 @@ void setup() {
     pinMode(pin, OUTPUT);
   }
 
-  strip.begin();
-  strip.clear();
-  strip.show();
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
 }
 
 void loop() {
@@ -911,12 +912,12 @@ void loop() {
 void updateLEDStrip() {
   if (neoMode == "static") {
     for (int i = 0; i < NUM_LEDS; i++) {
-      strip.setPixelColor(i, strip.Color(
+      pixels.setPixelColor(i, pixels.Color(
         (colorG * MAX_BRIGHTNESS) / 255,
         (colorR * MAX_BRIGHTNESS) / 255,
         (colorB * MAX_BRIGHTNESS) / 255));
     }
-    strip.show();
+    pixels.show();
   }
 }
 
