@@ -985,6 +985,8 @@ void updateActuators() {
 #define HEATER3_PIN  12
 #define VIBE1_PIN    26
 #define VIBE2_PIN    27
+#define PEB_PIN      16  // LED strip power enable pin
+
 #define NUM_LEDS     50
 #define NUM_COLORS   6
 #define MAX_PWM      175
@@ -1008,19 +1010,16 @@ unsigned long last_audio_time = 0;
 // Breathing effect control
 int breathe_brightness = 0;
 bool breathe_increasing = true;
-const int BREATHE_STEP = 3;       // Smaller = slower breathing
-const int MIN_BREATHE = 20;       // Minimum brightness
-const int MAX_BREATHE = 200;      // Maximum brightness
+const int BREATHE_STEP = 3;
+const int MIN_BREATHE = 20;
+const int MAX_BREATHE = 200;
 unsigned long last_breathe_update = 0;
-const int BREATHE_DELAY = 15;     // ms between breathe steps
+const int BREATHE_DELAY = 15;
 
 // Default fallback color (#E22DA1)
-// switched up r ang g
 int fallback_r = 45;
 int fallback_g = 226;
 int fallback_b = 161;
-
-#define PEB_PIN 16  // LED Power Enable Pin (new)
 
 void setup() {
   Serial.begin(115200);
@@ -1030,8 +1029,8 @@ void setup() {
   pinMode(HEATER3_PIN, OUTPUT);
   pinMode(VIBE1_PIN, OUTPUT);
   pinMode(VIBE2_PIN, OUTPUT);
-  pinMode(PEB_PIN, OUTPUT);          // ADD THIS
-  digitalWrite(PEB_PIN, HIGH);       // AND THIS — powers the LED strip
+  pinMode(PEB_PIN, OUTPUT);
+  digitalWrite(PEB_PIN, HIGH);  // Power on the LED strip
 
   strip.begin();
   strip.setBrightness(DEFAULT_BRIGHTNESS);
@@ -1080,9 +1079,9 @@ void loop() {
     }
 
     updateLEDStrip();
-    updateActuators();}else {
-  updateLEDStrip();  // Show fallback or breathing if no input
-  
+    updateActuators();
+  } else {
+    updateLEDStrip();
   }
 }
 
@@ -1096,20 +1095,15 @@ void updateLEDStrip() {
   if (audio_enabled && audio_brightness > 0) {
     brightness = map(audio_brightness, 0, 255, 0, DEFAULT_BRIGHTNESS);
   }
-
   strip.setBrightness(brightness);
 
   if (!audio_enabled && !screen_enabled) {
-    // Case 1: No audio or screen
     fillWithFallbackColor();
   } else if (use_screen_colors && (!audio_enabled || audio_timeout)) {
-    // Case 2 or Case 5: screen on and either no audio or audio timed out
     fillWithScreenColors();
   } else if (use_audio_only) {
-    // Case 3: Only audio
     fillWithFallbackColor();
   } else if (screen_enabled && audio_enabled && received_colors) {
-    // Case 4: Both
     fillWithScreenColors();
   } else {
     fillWithFallbackColor();
@@ -1118,8 +1112,6 @@ void updateLEDStrip() {
 
 void fillWithFallbackColor() {
   unsigned long now = millis();
-
-  // If we are in breathing mode (no audio or screen enabled)
   if (!audio_enabled && !screen_enabled) {
     if (now - last_breathe_update > BREATHE_DELAY) {
       breathe_brightness += breathe_increasing ? BREATHE_STEP : -BREATHE_STEP;
@@ -1127,7 +1119,6 @@ void fillWithFallbackColor() {
       if (breathe_brightness <= MIN_BREATHE) breathe_increasing = true;
       last_breathe_update = now;
     }
-
     strip.setBrightness(breathe_brightness);
   } else {
     strip.setBrightness(led_brightness);
@@ -1176,4 +1167,6 @@ void updateActuators() {
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
+
+
 */
