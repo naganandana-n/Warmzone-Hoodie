@@ -445,7 +445,7 @@ if (audio_enabled) {
 #define HEATER3_PIN  12
 #define VIBE1_PIN    26
 #define VIBE2_PIN    27
-#define NUM_LEDS     50
+#define NUM_LEDS     60
 #define NUM_COLORS   6
 #define MAX_PWM      175
 #define DEFAULT_BRIGHTNESS 200 // maximum brightness when audio intensity is at 255
@@ -468,7 +468,7 @@ unsigned long last_audio_time = 0;
 bool sync_with_audio = false;
 
 // Breathing effect control
-int breathe_brightness = 0;
+int breathe_brightness = MIN_BREATHE;
 bool breathe_increasing = true;
 const int BREATHE_STEP = 3;       // Smaller = slower breathing
 const int MIN_BREATHE = 20;       // Minimum brightness
@@ -576,6 +576,7 @@ void updateLEDStrip() {
 }
 
 void fillWithFallbackColor() {
+  Serial.println("Fallback breathing mode active");
   unsigned long now = millis();
 
   // If we are in breathing mode (no audio or screen enabled)
