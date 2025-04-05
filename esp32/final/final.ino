@@ -842,7 +842,6 @@ void updateActuators() {
 }
 
 */
-
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
@@ -852,23 +851,22 @@ void updateActuators() {
 #define HEATER3_PIN  12
 #define VIBE1_PIN    26
 #define VIBE2_PIN    27
-#define NUM_LEDS     60
+#define NUMPIXELS    60
 #define MAX_PWM      175
 #define MAX_BRIGHTNESS 125
 #define MOUSE_SPEED_THRESHOLD 2.0
 
-Adafruit_NeoPixel pixels(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// Device state
+// State
 float mouse_speed = 0.0;
 int heater_values[3] = {0, 0, 0};
 bool use_mouse_control = false;
 bool vibration_on = false;
 bool sync_with_audio = false;
 
-// NeoPixel state
-String neoMode = "static";  // hardcoded for now
-uint8_t colorR = 255, colorG = 0, colorB = 0;  // static red for testing
+String neoMode = "static";
+uint8_t colorR = 255, colorG = 0, colorB = 0;
 unsigned long lastEffectTime = 0;
 
 void setup() {
@@ -876,19 +874,17 @@ void setup() {
   for (int pin : {HEATER1_PIN, HEATER2_PIN, HEATER3_PIN, VIBE1_PIN, VIBE2_PIN}) {
     pinMode(pin, OUTPUT);
   }
-
   pixels.begin();
   pixels.clear();
   pixels.show();
 }
 
 void loop() {
-  // Read JSON input
+  // Receive JSON
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
     StaticJsonDocument<768> doc;
-    DeserializationError error = deserializeJson(doc, input);
-    if (error) return;
+    if (deserializeJson(doc, input)) return;
 
     use_mouse_control = doc["mouse"] | false;
     vibration_on = doc["vibration"] | false;
@@ -903,37 +899,77 @@ void loop() {
     if (doc.containsKey("MouseSpeed")) {
       mouse_speed = doc["MouseSpeed"];
     }
+
+    if (doc.containsKey("mode")) neoMode = doc["mode"].as<String>();
+    if (doc.containsKey("r")) colorR = doc["r"];
+    if (doc.containsKey("g")) colorG = doc["g"];
+    if (doc.containsKey("b")) colorB = doc["b"];
   }
 
-  updateLEDStrip();
+  updateNeoPixels();
   updateActuators();
 }
 
-void updateLEDStrip() {
+void updateNeoPixels() {
   if (neoMode == "static") {
-    for (int i = 0; i < NUM_LEDS; i++) {
+    for (int i = 0; i < NUMPIXELS; i++) {
       pixels.setPixelColor(i, pixels.Color(
         (colorG * MAX_BRIGHTNESS) / 255,
         (colorR * MAX_BRIGHTNESS) / 255,
         (colorB * MAX_BRIGHTNESS) / 255));
     }
     pixels.show();
+
+  } else if (neoMode == "off") {
+    pixels.clear();
+    pixels.show();
+
+  } else if (neoMode == "cycle") {
+    static uint16_t j = 0;
+    if (millis() - lastEffectTime > 20) {
+      for (int i = 0; i < NUMPIXELS; i++) {
+        pixels.setPixelColor(i, pixels.gamma32(pixels.ColorHSV((i * 256 + j) & 65535)));
+      }
+      pixels.show();
+      j++;
+      lastEffectTime = millis();
+    }
+
+  } else if (neoMode == "breathe") {
+    static int brightness = 0;
+    static bool increasing = true;
+    if (millis() - lastEffectTime > 10) {
+      for (int i = 0; i < NUMPIXELS; i++) {
+        pixels.setPixelColor(i, pixels.Color(
+          (colorG * brightness * MAX_BRIGHTNESS) / 65025,
+          (colorR * brightness * MAX_BRIGHTNESS) / 65025,
+          (colorB * brightness * MAX_BRIGHTNESS) / 65025));
+      }
+      pixels.show();
+
+      brightness += increasing ? 1 : -1;
+      if (brightness >= 255) increasing = false;
+      if (brightness <= 0) increasing = true;
+
+      lastEffectTime = millis();
+    }
   }
 }
 
 void updateActuators() {
+  int heater_pwm = 0;
   if (use_mouse_control) {
-    int pwm_val = (mouse_speed < MOUSE_SPEED_THRESHOLD) ? 0 : int((mouse_speed / 5.0) * MAX_PWM);
-    analogWrite(HEATER1_PIN, pwm_val);
-    analogWrite(HEATER2_PIN, pwm_val);
-    analogWrite(HEATER3_PIN, pwm_val);
+    heater_pwm = (mouse_speed < MOUSE_SPEED_THRESHOLD) ? 0 : int((mouse_speed / 5.0) * MAX_PWM);
+    analogWrite(HEATER1_PIN, heater_pwm);
+    analogWrite(HEATER2_PIN, heater_pwm);
+    analogWrite(HEATER3_PIN, heater_pwm);
   } else {
     analogWrite(HEATER1_PIN, heater_values[0]);
     analogWrite(HEATER2_PIN, heater_values[1]);
     analogWrite(HEATER3_PIN, heater_values[2]);
   }
 
-  int vib_pwm = (vibration_on ? (sync_with_audio ? 100 : 255) : 0);  // 100 as placeholder
+  int vib_pwm = vibration_on ? (sync_with_audio ? 100 : 255) : 0;
   analogWrite(VIBE1_PIN, vib_pwm);
   analogWrite(VIBE2_PIN, vib_pwm);
 }
