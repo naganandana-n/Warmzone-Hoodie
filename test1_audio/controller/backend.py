@@ -739,6 +739,7 @@ def get_screen_grid_colors():
 
 def send_data():
     """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
+    global flush_counter
     while not stop_event.is_set():
         # Read control state
         try:
