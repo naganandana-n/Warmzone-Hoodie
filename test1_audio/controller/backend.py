@@ -533,6 +533,7 @@ import os
 
 # Track how many messages have been sent
 flush_counter = 0
+latest_json_data = None
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
 SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
@@ -770,7 +771,8 @@ def send_data():
 
         # Send to ESP32
         json_str = json.dumps(json_data)
-        serial_queue.put(json_str)
+        global latest_json_data
+        latest_json_data = json_str
         # Increment counter and flush every 1000 messages
         flush_counter += 1
         if flush_counter >= 1000:
@@ -781,20 +783,19 @@ def send_data():
         print(f" Sending: {json_str}")
         time.sleep(SERIAL_WRITE_DELAY)
 
-# ** Serial Write Thread**
 def serial_write_loop():
-    """Continuously send data to ESP32 at a controlled rate."""
+    """Continuously send latest data to ESP32 at a controlled rate."""
+    global latest_json_data
     while not stop_event.is_set():
-        try:
-            json_data = serial_queue.get(timeout=0.5)
-            if ser:
-                ser.write(f"{json_data}\n".encode())  # Send to ESP32
-                print(f" Data sent: {json_data}")  # Confirm data sent
-                time.sleep(SERIAL_WRITE_DELAY)  # Prevent overflow
-        except Empty:
-            continue
-        except serial.SerialTimeoutException:
-            print(" Serial write timeout, skipping data")
+        if latest_json_data and ser:
+            try:
+                ser.write(f"{latest_json_data}\n".encode())
+                print(f" Data sent: {latest_json_data}")
+                time.sleep(SERIAL_WRITE_DELAY)
+            except serial.SerialTimeoutException:
+                print(" Serial write timeout, skipping data")
+        else:
+            time.sleep(0.01)  # avoid busy loop
 
 # **🔹 Run All Features in Parallel**
 def main_loop():
