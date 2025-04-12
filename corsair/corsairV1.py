@@ -86,6 +86,14 @@ class LineSelector(tk.Tk):
                                 highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
+         # 4) Draw center cross‑hair guidelines
+        w = self.winfo_screenwidth()
+        h = self.winfo_screenheight()
+        # vertical center line
+        self.canvas.create_line(w//2, 0, w//2, h, fill="white", dash=(4,2))
+        # horizontal center line
+        self.canvas.create_line(0, h//2, w, h//2, fill="white", dash=(4,2))
+
         # Store parameters
         self.num_lines     = num_lines
         self.leds_per_line = leds_per_line
