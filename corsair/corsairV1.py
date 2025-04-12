@@ -72,64 +72,48 @@ class LineSelector(tk.Tk):
 class LineSelector(tk.Tk):
     def __init__(self, num_lines=2, leds_per_line=12):
         super().__init__()
-
-        # 1) Remove window chrome and go fullscreen
-        self.overrideredirect(True)
         self.attributes("-fullscreen", True)
-
-        # 2) Pick a unique background color for transparency
-        transparent_color = "#FF00FF"
-        self.configure(bg=transparent_color)
-
-        # 3) Apply per‑pixel transparency on Windows; fallback alpha elsewhere
-        if sys.platform.startswith("win"):
-            self.wm_attributes("-transparentcolor", transparent_color)
-        else:
-            # macOS/Linux fallback: make entire window semi‑transparent
-            self.attributes("-alpha", 0.3)
-
-        # 4) Canvas uses the same transparent bg
-        self.canvas = tk.Canvas(self,
-                                cursor="cross",
-                                bg=transparent_color,
-                                highlightthickness=0)
+        self.canvas = tk.Canvas(self, cursor="cross", bg="gray11", highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        # store parameters
-        self.num_lines     = num_lines
+        self.num_lines = num_lines
         self.leds_per_line = leds_per_line
-        self.clicks        = []
-        self.lines         = []
-        self.temp_line     = None
+        self.clicks = []        # raw click positions
+        self.lines = []         # finalized lines
+        self.temp_line = None
 
-        # bind events
         self.canvas.bind("<Button-1>", self.on_click)
-        self.canvas.bind("<Motion>",  self.on_motion)
+        self.canvas.bind("<Motion>", self.on_motion)
 
     def on_click(self, event):
         self.clicks.append((event.x, event.y))
+        # every two clicks finalize one line
         if len(self.clicks) % 2 == 0:
-            p0, p1 = self.clicks[-2], self.clicks[-1]
+            p0 = self.clicks[-2]
+            p1 = self.clicks[-1]
             self.lines.append((p0, p1))
+            # draw the permanent line
             self.canvas.create_line(*p0, *p1, fill="cyan", width=2)
             if len(self.lines) == self.num_lines:
+                # once both lines defined, draw the dots
                 self.draw_dots()
-                # final click closes
+                # leave the GUI open so user can confirm; close on click
                 self.canvas.bind("<Button-1>", lambda e: self.destroy())
 
     def on_motion(self, event):
+        # draw a dashed preview of the current line
         if len(self.clicks) % 2 == 1:
             p0 = self.clicks[-1]
             if self.temp_line:
                 self.canvas.delete(self.temp_line)
-            self.temp_line = self.canvas.create_line(
-                *p0, event.x, event.y, dash=(4,2), fill="cyan"
-            )
+            self.temp_line = self.canvas.create_line(*p0, event.x, event.y,
+                                                     dash=(4,2), fill="cyan")
 
     def draw_dots(self):
+        # for each line, compute equally spaced points and draw a small circle
         for p0, p1 in self.lines:
-            pts = get_equidistant_points(p0, p1, self.leds_per_line)
-            for x, y in pts:
+            points = get_equidistant_points(p0, p1, self.leds_per_line)
+            for x, y in points:
                 self.canvas.create_oval(
                     x - DOT_RADIUS, y - DOT_RADIUS,
                     x + DOT_RADIUS, y + DOT_RADIUS,
