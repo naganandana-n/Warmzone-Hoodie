@@ -6,7 +6,7 @@ import time
 import serial
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
-SERIAL_PORT = "COM3"      # e.g. "COM3" on Windows or "/dev/ttyUSB0" on Linux/macOS
+SERIAL_PORT = "COM5"      # e.g. "COM3" on Windows or "/dev/ttyUSB0" on Linux/macOS
 BAUD_RATE   = 115200
 NUM_LEDS    = 24
 SAMPLE_FPS  = 20          # how many times per second to sample/send
@@ -88,6 +88,9 @@ def get_equidistant_points(p0, p1, n):
 
 # ─── SCREEN COLOR EXTRACTION ────────────────────────────────────────────
 
+'''
+# single point extraction
+
 def sample_colors_at(points):
     colors = []
     with mss.mss() as sct:
@@ -97,7 +100,35 @@ def sample_colors_at(points):
             r,g,b = img.pixel(0,0)
             colors.append((r,g,b))
     return colors
+'''
+# ─── SCREEN COLOR EXTRACTION WITH 3×3 AVERAGING ──────────────────────────
 
+def sample_colors_at(points, window=3):
+    """
+    For each (x,y) in points, grab a window×window block centered on it,
+    average all pixels in that block, and return a list of averaged (R,G,B) tuples.
+    """
+    half = window // 2
+    colors = []
+    with mss.mss() as sct:
+        for x, y in points:
+            # define the capture region
+            left = int(x) - half
+            top  = int(y) - half
+            region = {
+                "left": left,
+                "top": top,
+                "width": window,
+                "height": window
+            }
+            img = sct.grab(region)
+            # convert raw bytes to a (window × window × 3) array
+            arr = np.frombuffer(img.rgb, dtype=np.uint8)
+            arr = arr.reshape((window, window, 3))
+            # average over the first two axes (height, width)
+            avg = tuple(arr.mean(axis=(0, 1)).astype(int))
+            colors.append(avg)
+    return colors
 # ─── SERIAL LED OUTPUT ───────────────────────────────────────────────────
 
 class SerialLEDController:
