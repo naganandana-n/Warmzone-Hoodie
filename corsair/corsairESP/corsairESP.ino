@@ -142,6 +142,10 @@ void loop() {
 
 */
 
+/* 
+
+// esp working version
+
 #include <Adafruit_NeoPixel.h>
 
 // ── USER CONFIG ───────────────────────────────────────────────────────────
@@ -253,5 +257,106 @@ void loop() {
   }
 
   // 4) Delay to control easing rate
+  delay(EASE_STEP_DELAY);
+}
+
+*/
+
+// final color version
+
+#include <Adafruit_NeoPixel.h>
+
+// ── USER CONFIG ───────────────────────────────────────────────────────────
+#define LED_PIN         23
+#define NUM_LEDS        25      // now 25 LEDs total
+#define NUM_SAMPLES     24
+#define PEB_PIN         16
+const uint32_t SERIAL_BAUD   = 115200;
+
+// EASING CONFIG
+const unsigned long FRAME_INTERVAL  = 17;   // ms between accepting new frames
+const float          EASE_FACTOR     = 0.2; // fraction toward target each step
+const unsigned long EASE_STEP_DELAY = 5;    // ms between easing iterations
+// ──────────────────────────────────────────────────────────────────────────
+
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// Buffers for easing
+uint8_t currentR[NUM_LEDS], currentG[NUM_LEDS], currentB[NUM_LEDS];
+uint8_t targetR[NUM_LEDS],  targetG[NUM_LEDS],  targetB[NUM_LEDS];
+
+uint8_t frameBuf[NUM_SAMPLES * 3];
+unsigned long lastFrameTime = 0;
+
+void setup() {
+  Serial.begin(SERIAL_BAUD);
+  while (!Serial) { delay(10); }
+
+  // Keep PEB pin high
+  pinMode(PEB_PIN, OUTPUT);
+  digitalWrite(PEB_PIN, HIGH);
+
+  // Initialize strip
+  strip.begin();
+  strip.setBrightness(128);
+  strip.show();
+
+  // Initialize buffers to off
+  for (int i = 0; i < NUM_LEDS; i++) {
+    currentR[i] = currentG[i] = currentB[i] = 0;
+    targetR[i]  = targetG[i]  = targetB[i]  = 0;
+  }
+}
+
+void loop() {
+  unsigned long now = millis();
+
+  // 1) Read new frame if due
+  if (now - lastFrameTime >= FRAME_INTERVAL && Serial.available() >= NUM_SAMPLES * 3) {
+    lastFrameTime = now;
+    Serial.readBytes(frameBuf, NUM_SAMPLES * 3);
+
+    // Map each sample to one LED
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+      uint8_t r = frameBuf[i*3 + 0];
+      uint8_t g = frameBuf[i*3 + 1];
+      uint8_t b = frameBuf[i*3 + 2];
+      targetR[i] = r;
+      targetG[i] = g;
+      targetB[i] = b;
+    }
+    // Final LED (index 24) mirrors sample 23
+    targetR[NUM_LEDS-1] = frameBuf[(NUM_SAMPLES-1)*3 + 0];
+    targetG[NUM_LEDS-1] = frameBuf[(NUM_SAMPLES-1)*3 + 1];
+    targetB[NUM_LEDS-1] = frameBuf[(NUM_SAMPLES-1)*3 + 2];
+  }
+
+  // 2) Easing step
+  bool changed = false;
+  for (int i = 0; i < NUM_LEDS; i++) {
+    int dr = int(targetR[i]) - int(currentR[i]);
+    int dg = int(targetG[i]) - int(currentG[i]);
+    int db = int(targetB[i]) - int(currentB[i]);
+
+    if (abs(dr) > 1 || abs(dg) > 1 || abs(db) > 1) {
+      currentR[i] = currentR[i] + dr * EASE_FACTOR;
+      currentG[i] = currentG[i] + dg * EASE_FACTOR;
+      currentB[i] = currentB[i] + db * EASE_FACTOR;
+      changed = true;
+    } else {
+      // Snap if close
+      currentR[i] = targetR[i];
+      currentG[i] = targetG[i];
+      currentB[i] = targetB[i];
+    }
+    strip.setPixelColor(i, strip.Color(currentR[i], currentG[i], currentB[i]));
+  }
+
+  // 3) Show if changed
+  if (changed) {
+    strip.show();
+  }
+
+  // 4) Control easing rate
   delay(EASE_STEP_DELAY);
 }
