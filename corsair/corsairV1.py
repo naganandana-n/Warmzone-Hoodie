@@ -7,10 +7,10 @@ import serial
 import sys
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
-SERIAL_PORT = "COM5"      # e.g. "COM3" on Windows or "/dev/ttyUSB0" on Linux/macOS
+SERIAL_PORT = "COM5"      
 BAUD_RATE   = 115200
 NUM_LEDS    = 24
-SAMPLE_FPS  = 20          # how many times per second to sample/send
+SAMPLE_FPS  = 60          # how many times per second to sample/send
 DOT_RADIUS  = 5           # radius in pixels for the overlay dots
 # ──────────────────────────────────────────────────────────────────────────
 
