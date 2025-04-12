@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import time
 import serial
+import sys
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 SERIAL_PORT = "COM5"      # e.g. "COM3" on Windows or "/dev/ttyUSB0" on Linux/macOS
@@ -15,6 +16,7 @@ DOT_RADIUS  = 5           # radius in pixels for the overlay dots
 
 # ─── GUI FOR LINE SELECTION & DOT OVERLAY ─────────────────────────────────
 
+'''
 class LineSelector(tk.Tk):
     def __init__(self, num_lines=2, leds_per_line=12):
         super().__init__()
@@ -60,6 +62,74 @@ class LineSelector(tk.Tk):
         for p0, p1 in self.lines:
             points = get_equidistant_points(p0, p1, self.leds_per_line)
             for x, y in points:
+                self.canvas.create_oval(
+                    x - DOT_RADIUS, y - DOT_RADIUS,
+                    x + DOT_RADIUS, y + DOT_RADIUS,
+                    fill="magenta", outline=""
+                )
+'''
+
+class LineSelector(tk.Tk):
+    def __init__(self, num_lines=2, leds_per_line=12):
+        super().__init__()
+
+        # 1) Remove window chrome and go fullscreen
+        self.overrideredirect(True)
+        self.attributes("-fullscreen", True)
+
+        # 2) Pick a unique background color for transparency
+        transparent_color = "#FF00FF"
+        self.configure(bg=transparent_color)
+
+        # 3) Apply per‑pixel transparency on Windows; fallback alpha elsewhere
+        if sys.platform.startswith("win"):
+            self.wm_attributes("-transparentcolor", transparent_color)
+        else:
+            # macOS/Linux fallback: make entire window semi‑transparent
+            self.attributes("-alpha", 0.3)
+
+        # 4) Canvas uses the same transparent bg
+        self.canvas = tk.Canvas(self,
+                                cursor="cross",
+                                bg=transparent_color,
+                                highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+
+        # store parameters
+        self.num_lines     = num_lines
+        self.leds_per_line = leds_per_line
+        self.clicks        = []
+        self.lines         = []
+        self.temp_line     = None
+
+        # bind events
+        self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<Motion>",  self.on_motion)
+
+    def on_click(self, event):
+        self.clicks.append((event.x, event.y))
+        if len(self.clicks) % 2 == 0:
+            p0, p1 = self.clicks[-2], self.clicks[-1]
+            self.lines.append((p0, p1))
+            self.canvas.create_line(*p0, *p1, fill="cyan", width=2)
+            if len(self.lines) == self.num_lines:
+                self.draw_dots()
+                # final click closes
+                self.canvas.bind("<Button-1>", lambda e: self.destroy())
+
+    def on_motion(self, event):
+        if len(self.clicks) % 2 == 1:
+            p0 = self.clicks[-1]
+            if self.temp_line:
+                self.canvas.delete(self.temp_line)
+            self.temp_line = self.canvas.create_line(
+                *p0, event.x, event.y, dash=(4,2), fill="cyan"
+            )
+
+    def draw_dots(self):
+        for p0, p1 in self.lines:
+            pts = get_equidistant_points(p0, p1, self.leds_per_line)
+            for x, y in pts:
                 self.canvas.create_oval(
                     x - DOT_RADIUS, y - DOT_RADIUS,
                     x + DOT_RADIUS, y + DOT_RADIUS,
