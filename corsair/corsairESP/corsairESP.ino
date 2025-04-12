@@ -321,8 +321,9 @@ void loop() {
       uint8_t r = frameBuf[i*3 + 0];
       uint8_t g = frameBuf[i*3 + 1];
       uint8_t b = frameBuf[i*3 + 2];
-      targetR[i] = r;
-      targetG[i] = g;
+      // swapped for our Pebble LED's (g and r)
+      targetR[i] = g;
+      targetG[i] = r;
       targetB[i] = b;
     }
     // Final LED (index 24) mirrors sample 23
