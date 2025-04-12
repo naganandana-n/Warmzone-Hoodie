@@ -1142,9 +1142,18 @@ void updateActuators() {
     }
   }
 
-  int vib_pwm = (vibration_on ? (sync_with_audio ? audio_brightness : 255) : 0);
-  analogWrite(VIBE1_PIN, vib_pwm);
-  analogWrite(VIBE2_PIN, vib_pwm);
+  float audio_gain = 50.0;  // 5 * 50 = 250
+
+int raw = int(audio_brightness * audio_gain);
+raw = constrain(raw, 0, 255);
+
+int vib_pwm = vibration_on
+  ? (sync_with_audio ? raw : 255)
+  : 0;
+
+analogWrite(VIBE1_PIN, vib_pwm);
+analogWrite(VIBE2_PIN, vib_pwm);
+
 }
 
 void handleRoot() {
