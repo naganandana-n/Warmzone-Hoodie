@@ -1,49 +1,45 @@
-#include <FastLED.h>
+#include <Adafruit_NeoPixel.h>
 
 // ── USER CONFIG ───────────────────────────────────────────────────────────
-#define LED_PIN      23
-#define NUM_LEDS     24
-#define LED_TYPE     WS2812B
-#define COLOR_ORDER  GRB
-
+#define LED_PIN    23
+#define NUM_LEDS   24
 // Baud rate for Serial
 const uint32_t SERIAL_BAUD = 115200;
 // ──────────────────────────────────────────────────────────────────────────
 
-CRGB leds[NUM_LEDS];
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
   // Initialize Serial over USB
   Serial.begin(SERIAL_BAUD);
-  while(!Serial) {
-    // wait for Serial port to be ready
+  while (!Serial) {
     delay(10);
   }
-  Serial.println("ESP32 LED Serial Bridge Starting...");
+  Serial.println("ESP32 NeoPixel Serial Bridge Starting...");
 
-  // Initialize FastLED
-  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS)
-         .setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(128);
+  // Initialize NeoPixel strip
+  strip.begin();
+  strip.setBrightness(128);
+  strip.show(); // turn off all pixels
 }
 
 void loop() {
-  // Check if we have at least 24*3 = 72 bytes available
+  // Wait until we have at least NUM_LEDS*3 bytes available
   if (Serial.available() >= NUM_LEDS * 3) {
     uint8_t buf[NUM_LEDS * 3];
-    // Read exactly 72 bytes
     Serial.readBytes(buf, NUM_LEDS * 3);
 
-    // Copy into LED array
+    // Write to NeoPixel strip
     for (int i = 0; i < NUM_LEDS; i++) {
       int idx = i * 3;
-      leds[i] = CRGB(buf[idx], buf[idx + 1], buf[idx + 2]);
+      uint8_t r = buf[idx];
+      uint8_t g = buf[idx + 1];
+      uint8_t b = buf[idx + 2];
+      strip.setPixelColor(i, strip.Color(r, g, b));
     }
-
-    // Push to strip
-    FastLED.show();
+    strip.show();
   }
 
-  // (Optional) small delay to yield
+  // Optional small delay
   // delay(1);
 }
