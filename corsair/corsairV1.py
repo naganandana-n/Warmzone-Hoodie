@@ -183,3 +183,6 @@ def main():
         print("Exiting.")
     finally:
         controller.close()
+
+if __name__ == "__main__":
+    main()
