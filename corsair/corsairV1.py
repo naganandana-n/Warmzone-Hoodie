@@ -136,14 +136,22 @@ class SerialLEDController:
         self.num_leds = num_leds
         self.ser = serial.Serial(port, baud, timeout=1)
         time.sleep(2)  # allow ESP32 to reset
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
 
     def send_colors(self, colors):
         if len(colors) != self.num_leds:
             raise ValueError(f"Expected {self.num_leds} colors, got {len(colors)}")
+
+        # DEBUG: print out what we're sending
+        black_count = sum(1 for c in colors if c == (0, 0, 0))
+        print(f"Sending frame: first 3 LEDs {colors[:3]}, last 3 LEDs {colors[-3:]}, black count = {black_count}/{self.num_leds}")
+
         data = bytearray()
         for (r, g, b) in colors:
             data += bytes((r, g, b))
         self.ser.write(data)
+        self.ser.flush()
 
     def close(self):
         self.ser.close()
@@ -154,7 +162,6 @@ def main():
     print("Click to define two lines (4 clicks total)...")
     lines = select_two_lines()
 
-    # compute the 24 sample points in the same order as the dots
     points = []
     for p0, p1 in lines:
         pts = get_equidistant_points(p0, p1, NUM_LEDS // 2)
@@ -176,6 +183,3 @@ def main():
         print("Exiting.")
     finally:
         controller.close()
-
-if __name__ == "__main__":
-    main()
