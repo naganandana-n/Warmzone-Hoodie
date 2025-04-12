@@ -73,7 +73,8 @@ class LineSelector(tk.Tk):
     def __init__(self, num_lines=2, leds_per_line=12):
         super().__init__()
         self.attributes("-fullscreen", True)
-        self.canvas = tk.Canvas(self, cursor="cross", bg="gray11", highlightthickness=0)
+        self.attributes("-transparent")
+        self.canvas = tk.Canvas(self, cursor="cross", highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
         self.num_lines = num_lines
