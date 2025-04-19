@@ -863,16 +863,25 @@ document.getElementById("screenToggle").addEventListener("change", (e) => {
   });
 
   document.getElementById("heater1").addEventListener("input", e => {
-  window.latestControlState.heaters[0] = parseInt(e.target.value);
-  socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[0] = val;
+  socket.emit("toggle", { key: "heater1", value: val });
+
+  updateModelFromState(); // ✅ Trigger model change if needed
 });
 document.getElementById("heater2").addEventListener("input", e => {
-  window.latestControlState.heaters[1] = parseInt(e.target.value);
-  socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[1] = val;
+  socket.emit("toggle", { key: "heater2", value: val });
+
+  updateModelFromState();
 });
 document.getElementById("heater3").addEventListener("input", e => {
-  window.latestControlState.heaters[2] = parseInt(e.target.value);
-  socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[2] = val;
+  socket.emit("toggle", { key: "heater3", value: val });
+
+  updateModelFromState();
 });
 
   const savedTheme = localStorage.getItem("theme");
