@@ -39,7 +39,6 @@ float mouse_speed = 0.0;
 bool received_colors = false;
 bool received_brightness = false;
 uint8_t vibint=0;
-bool lights_enabled = true;
 
 uint8_t fallback_r = 255, fallback_g = 0, fallback_b = 127;
 
@@ -99,7 +98,6 @@ void readSerialJSON() {
         heater_values[0] = parsedDoc["heaters"][0] | 0;
         heater_values[1] = parsedDoc["heaters"][1] | 0;
         heater_values[2] = parsedDoc["heaters"][2] | 0;
-        lights_enabled = parsedDoc["lights_enabled"] | true;
 
         received_colors = parsedDoc.containsKey("LEDColors");
 
@@ -119,21 +117,6 @@ void readSerialJSON() {
 }
 
 void updateLEDpixels() {
-  if (!lights_enabled) {
-    // Turn off LEDs
-    pixels.clear();
-    pixels.show();
-
-    // Disable PEB and INV
-    digitalWrite(PEB_PIN, LOW);  // Turn off LED power
-    digitalWrite(INV, LOW);      // Turn off inverter
-
-    return;
-  }
-
-  // Ensure they are ON when lights are enabled
-  digitalWrite(PEB_PIN, HIGH);
-  digitalWrite(INV, HIGH);
   if (!received_colors && !received_brightness) {
     unsigned long now = millis();
     if (millis()-last_breathe_update>10)
