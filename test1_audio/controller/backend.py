@@ -1070,6 +1070,8 @@ def send_data():
 
         if control.get("mouse", True):
             json_data["MouseSpeed"] = calculate_scaled_speed()
+        if control.get("lights_enabled", True):
+            json_data["lights_enabled"] = True
 
         # Future support
         json_data["sensitivity"] = control.get("sensitivity", 3)
@@ -1077,7 +1079,7 @@ def send_data():
         json_data["vibration"] = control.get("vibration", False)
         json_data["sync_with_audio"] = control.get("sync_with_audio", False)
 
-        json_data["lights_enabled"] = control.get("lights_enabled", True)  # ✅ ADD this line
+        
         json_str = json.dumps(json_data)
         global latest_json_data
         latest_json_data = json_str
