@@ -63,6 +63,7 @@ renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   }
 
   animate();
+  updateSceneBackground(); 
   // Force a resize after layout stabilizes
 setTimeout(() => {
     resizeCanvas();
@@ -141,3 +142,11 @@ function animate() {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
+
+  function updateSceneBackground() {
+    const isDark = document.body.classList.contains("dark");
+    const color = isDark ? 0x121212 : 0xf0f0f0;
+    scene.background = new THREE.Color(color);
+  }
+
+  export { updateSceneBackground };
