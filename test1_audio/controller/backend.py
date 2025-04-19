@@ -513,8 +513,7 @@ if __name__ == "__main__":
     main_thread.join()
 '''
 
-# edited version of the above:
-# test
+# previously working best version of backend.py:
 
 import time
 import json
@@ -552,8 +551,7 @@ def read_control_state():
             "sensitivity": 3,
             "heaters": [1, 1, 1],
             "vibration": False,
-            "sync_with_audio": False,
-            "lights_enabled": True
+            "sync_with_audio": False
         }
 
 def was_shutdown_requested():
@@ -593,7 +591,6 @@ if SERIAL_PORT:
         print(f" Failed to connect to {SERIAL_PORT}.")
         ser = None
 
-
 # Store movement data
 positions = []
 timestamps = []
@@ -613,7 +610,6 @@ DECAY_START_TIME = 60  # **Start decay after 60 seconds of no movement**
 smoothed_speed = 0
 last_update_time = time.time()
 
-
 def on_move(x, y):
     """Tracks mouse movement, updates speed calculations."""
     global positions, timestamps, velocities, last_update_time
@@ -629,7 +625,6 @@ def on_move(x, y):
         velocities.pop(0) if len(velocities) > 0 else None  # Trim velocity list
 
     last_update_time = time.time()  # Update last movement time
-
 
 def calculate_scaled_speed():
     """Calculates smoothed speed (0 to 5), considering acceleration & decay after 60 sec."""
@@ -684,7 +679,6 @@ def calculate_scaled_speed():
         smoothed_speed *= decay_factor  # Gradually decrease speed
 
     return round(smoothed_speed, 2)
-
 
 # **Start listening to mouse movement**
 mouse_listener = mouse.Listener(on_move=on_move)
@@ -755,17 +749,12 @@ def send_data():
         json_data = {}
 
         # Conditionally include data based on UI toggle
-        if control.get("lights_enabled", True):
-            if control.get("screen", True):
-                colors = get_screen_grid_colors()
-                json_data["LEDColors"] = colors
+        if control.get("screen", True):
+            colors = get_screen_grid_colors()
+            json_data["LEDColors"] = colors
 
-            if control.get("audio", True):
-                json_data["Brightness"] = audio_brightness
-        else:
-        # Force ESP32 to turn off LEDs
-            json_data["LEDColors"] = []
-            json_data["Brightness"] = 0
+        if control.get("audio", True):
+            json_data["Brightness"] = audio_brightness
 
         if control.get("mouse", True):
             json_data["MouseSpeed"] = calculate_scaled_speed()
