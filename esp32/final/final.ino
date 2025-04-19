@@ -1135,14 +1135,14 @@ void updateActuators() {
   } else {
     for (int i = 0; i < 3; i++) {
       int mapped_pwm = 0;
-      if (heater_values[i] == 1) mapped_pwm = 56;
-      else if (heater_values[i] == 2) mapped_pwm = 112;
-      else if (heater_values[i] == 3) mapped_pwm = 225;
+      if (heater_values[i] == 1) mapped_pwm = 40;
+      else if (heater_values[i] == 2) mapped_pwm = 100;
+      else if (heater_values[i] == 3) mapped_pwm = 175;
       analogWrite((i == 0 ? HEATER1_PIN : (i == 1 ? HEATER2_PIN : HEATER3_PIN)), mapped_pwm);
     }
   }
 
-  float audio_gain = 50.0;  // 5 * 50 = 250
+  float audio_gain = 15.0;  // 5 * 50 = 250
 
 int raw = int(audio_brightness * audio_gain);
 raw = constrain(raw, 0, 255);
