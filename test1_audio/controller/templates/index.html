@@ -466,7 +466,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       padding: 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 500px;
+      width: 30%;
     }
 
     .feature {
@@ -558,6 +558,24 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   color: var(--text);
   font-size: 1.2rem;
 }
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.logo {
+  height: 40px;
+  object-fit: contain;
+}
   </style>
 <script>
   const initialState = {{ state|tojson }};
@@ -565,7 +583,10 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
 </head>
 <body>
   <div class="header">
-    Nana Warmzone Controller
+    <div class="header-content">
+      <div class="title">Nana Warmzone Controller</div>
+      <img src="/static/logo.png" alt="Logo" class="logo" />
+    </div>
     <button class="dark-toggle" id="darkModeToggle">Dark</button>
   </div>
 
