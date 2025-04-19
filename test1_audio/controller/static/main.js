@@ -46,9 +46,10 @@ function init() {
   scene.add(ambientLight);
 
   window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    const canvas = renderer.domElement;
+camera.aspect = canvas.clientWidth / canvas.clientHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   });
 
   // Hook up the model switch button
@@ -108,10 +109,19 @@ function loadModel(file = 'hoodie1.gltf', preserveRotation = 0) {
 }
 
 function animate() {
-  requestAnimationFrame(animate);
-  if (model) {
-    model.rotation.y += 0.005;
+    requestAnimationFrame(animate);
+    if (model) model.rotation.y += 0.005;
+  
+    // ✅ Resize canvas if needed
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (canvas.width !== width || canvas.height !== height) {
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+  
+    controls.update();
+    renderer.render(scene, camera);
   }
-  controls.update();
-  renderer.render(scene, camera);
-}
