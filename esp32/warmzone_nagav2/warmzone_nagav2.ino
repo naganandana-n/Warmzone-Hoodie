@@ -120,10 +120,20 @@ void readSerialJSON() {
 
 void updateLEDpixels() {
   if (!lights_enabled) {
+    // Turn off LEDs
     pixels.clear();
     pixels.show();
+
+    // Disable PEB and INV
+    digitalWrite(PEB_PIN, LOW);  // Turn off LED power
+    digitalWrite(INV, LOW);      // Turn off inverter
+
     return;
   }
+
+  // Ensure they are ON when lights are enabled
+  digitalWrite(PEB_PIN, HIGH);
+  digitalWrite(INV, HIGH);
   if (!received_colors && !received_brightness) {
     unsigned long now = millis();
     if (millis()-last_breathe_update>10)
