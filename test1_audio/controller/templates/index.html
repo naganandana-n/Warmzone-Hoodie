@@ -449,62 +449,38 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       cursor: pointer;
     }
 
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+
     .container {
-      max-width: 500px;
-      margin: 2rem auto;
       background-color: var(--card);
       padding: 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .tab-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .tab-button {
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      text-align: left;
-      font-weight: bold;
-      padding: 0.5rem 1rem;
-      border-left: 4px solid transparent;
-      cursor: pointer;
-      color: var(--text);
-      transition: 0.2s;
-    }
-
-    .tab-button.active {
-      border-color: #E22DA1;
-      color: #E22DA1;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
+      width: 100%;
     }
 
     .feature {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      margin: 1.5rem 0;
+      justify-content: space-between;
+      align-items: center;
+      margin: 1rem 0;
     }
 
-    .feature span {
-      margin-bottom: 0.5rem;
-      font-weight: 500;
+    .sub-feature {
+      margin-left: 1.5rem;
     }
 
     .slider {
-      width: 100%;
+      width: 150px;
+      margin-left: 1rem;
       accent-color: #E22DA1;
     }
 
@@ -564,14 +540,8 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     <button class="dark-toggle" id="darkModeToggle">Dark</button>
   </div>
 
-  <div class="container">
-    <div class="tab-bar">
-      <button class="tab-button active" data-tab="light">Light</button>
-      <button class="tab-button" data-tab="heaters">Heaters</button>
-      <button class="tab-button" data-tab="vibration">Vibration</button>
-    </div>
-
-    <div id="tab-light" class="tab-content active">
+  <div class="wrapper">
+    <div class="container">
       <div class="feature">
         <span>Audio</span>
         <label class="toggle">
@@ -588,7 +558,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       </div>
     </div>
 
-    <div id="tab-heaters" class="tab-content">
+    <div class="container">
       <div class="feature">
         <span>Mouse</span>
         <label class="toggle">
@@ -596,11 +566,11 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
           <span class="slider-round"></span>
         </label>
       </div>
-      <div id="sensitivitySlider" class="feature">
+      <div id="sensitivitySlider" class="feature sub-feature">
         <span>Sensitivity</span>
         <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
       </div>
-      <div id="heaterControls" class="hidden">
+      <div id="heaterControls" class="sub-feature hidden">
         <div class="feature">
           <span>Heater 1</span>
           <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
@@ -616,7 +586,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       </div>
     </div>
 
-    <div id="tab-vibration" class="tab-content">
+    <div class="container">
       <div class="feature">
         <span>Vibration</span>
         <label class="toggle">
@@ -624,7 +594,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
           <span class="slider-round"></span>
         </label>
       </div>
-      <div id="syncAudio" class="feature hidden">
+      <div id="syncAudio" class="feature sub-feature hidden">
         <span>Sync with Audio</span>
         <label class="toggle">
           <input type="checkbox" id="syncToggle" />
@@ -633,18 +603,5 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       </div>
     </div>
   </div>
-
-  <script>
-    document.querySelectorAll('.tab-button').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-
-        const selectedTab = button.getAttribute('data-tab');
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.getElementById(`tab-${selectedTab}`).classList.add('active');
-      });
-    });
-  </script>
 </body>
 </html>
