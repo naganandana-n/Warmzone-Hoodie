@@ -394,6 +394,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
 </html>
 -->
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -533,6 +534,9 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       display: none !important;
     }
   </style>
+<script>
+  const initialState = {{ state|tojson }};
+</script>
 </head>
 <body>
   <div class="header">
@@ -541,7 +545,11 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   </div>
 
   <div class="wrapper">
-    <div class="container">
+    <div id="popupModal" class="modal hidden">
+  <div class="modal-content" id="popupContent">Checking ESP32...</div>
+</div>
+
+<div class="container">
       <div class="feature">
         <span>Audio</span>
         <label class="toggle">
@@ -603,5 +611,142 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       </div>
     </div>
   </div>
+<script>
+  const socket = io();
+
+  async function checkPorts() {
+    try {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      const ports = result.ports;
+      const autoConnected = result.auto_connected;
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+
+      if (ports.length === 0) {
+        content.textContent = "Please connect your hoodie and relaunch the app. Please close this browser page";
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          socket.emit("shutdown");
+        }, 5000);
+      } else if (autoConnected) {
+        content.textContent = "Hoodie connected!";
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          modal.classList.add("hidden");
+        }, 3000);
+      }
+    } catch (err) {
+      console.error("Error fetching ports:", err);
+    }
+  }
+
+  let hoodiePreviouslyConnected = false;
+
+  async function monitorESPConnection() {
+    try {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      const ports = result.ports;
+
+      if (hoodiePreviouslyConnected && ports.length === 0) {
+        const modal = document.getElementById("popupModal");
+        const content = document.getElementById("popupContent");
+        content.textContent = "Your hoodie has been disconnected. Please reconnect and relaunch the app.";
+        modal.classList.remove("hidden");
+        socket.emit("shutdown");
+      }
+
+      if (ports.length > 0) hoodiePreviouslyConnected = true;
+    } catch (err) {
+      console.error("ESP32 connection check failed:", err);
+    }
+  }
+
+  window.onload = () => {
+    document.getElementById("audioToggle").checked = initialState.audio;
+    document.getElementById("screenToggle").checked = initialState.screen;
+    document.getElementById("mouseToggle").checked = initialState.mouse;
+    document.getElementById("vibrationToggle").checked = initialState.vibration;
+    document.getElementById("syncToggle").checked = initialState.sync_with_audio;
+
+    document.getElementById("sensitivity").value = initialState.sensitivity;
+    document.getElementById("heater1").value = initialState.heaters[0];
+    document.getElementById("heater2").value = initialState.heaters[1];
+    document.getElementById("heater3").value = initialState.heaters[2];
+
+    document.getElementById("sensitivitySlider").classList.toggle("hidden", !initialState.mouse);
+    document.getElementById("heaterControls").classList.toggle("hidden", initialState.mouse);
+    document.getElementById("syncAudio").classList.toggle("hidden", !initialState.vibration);
+
+    checkPorts();
+    setInterval(monitorESPConnection, 5000);
+  };
+
+  const mouseToggle = document.getElementById("mouseToggle");
+  const sensitivitySlider = document.getElementById("sensitivitySlider");
+  const heaterControls = document.getElementById("heaterControls");
+
+  mouseToggle.addEventListener("change", () => {
+    if (mouseToggle.checked) {
+      sensitivitySlider.classList.remove("hidden");
+      heaterControls.classList.add("hidden");
+    } else {
+      sensitivitySlider.classList.add("hidden");
+      heaterControls.classList.remove("hidden");
+    }
+    socket.emit("toggle", { key: "mouse" });
+  });
+
+  document.getElementById("vibrationToggle").addEventListener("change", (e) => {
+    document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
+    socket.emit("toggle", { key: "vibration" });
+  });
+
+  document.getElementById("syncToggle").addEventListener("change", () => {
+    socket.emit("toggle", { key: "sync_with_audio" });
+  });
+
+  document.getElementById("audioToggle").addEventListener("change", () => {
+    socket.emit("toggle", { key: "audio" });
+  });
+
+  document.getElementById("screenToggle").addEventListener("change", () => {
+    socket.emit("toggle", { key: "screen" });
+  });
+
+  document.getElementById("sensitivity").addEventListener("input", e => {
+    socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) });
+  });
+
+  document.getElementById("heater1").addEventListener("input", e => {
+    socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
+  });
+  document.getElementById("heater2").addEventListener("input", e => {
+    socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
+  });
+  document.getElementById("heater3").addEventListener("input", e => {
+    socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
+  });
+
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark");
+    document.getElementById("darkModeToggle").textContent = "Light";
+  }
+
+  document.getElementById("darkModeToggle").addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+    document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  });
+
+  window.addEventListener("beforeunload", () => {
+    socket.emit("shutdown");
+  });
+</script>
 </body>
 </html>
+
+
