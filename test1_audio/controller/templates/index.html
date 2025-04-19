@@ -588,6 +588,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   height: calc(100vh - 80px); /* Adjust to leave space for the header */
   width: 100vw;
   overflow: hidden;
+  background-color: var(--bg);
 }
 
 .wrapper {
@@ -597,9 +598,10 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   padding: 2rem;
   width: 40%;
   min-width: 320px;
-  background-color: var(--bg);
+  background-color: var(--bg); /* ✅ Inherits theme */
   color: var(--text);
   box-sizing: border-box;
+  height: 100%; 
 }
 
 .canvas-container {
@@ -630,6 +632,13 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   .container {
     width: 90%;                  /* ✅ Slightly narrower for smaller screens */
   }
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg);
+  margin: 0;
+  padding: 0;
 }
   </style>
 <script>
