@@ -14,6 +14,12 @@ let fixedTargetY = null;
 init();
 loadModel('/static/hoodie1.gltf');
 
+function updateSceneBackground() {
+    const isDark = document.body.classList.contains("dark");
+    const color = isDark ? 0x121212 : 0xf0f0f0;
+    scene.background = new THREE.Color(color);
+  }
+  
 function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
@@ -143,10 +149,6 @@ function animate() {
     camera.updateProjectionMatrix();
   }
 
-  function updateSceneBackground() {
-    const isDark = document.body.classList.contains("dark");
-    const color = isDark ? 0x121212 : 0xf0f0f0;
-    scene.background = new THREE.Color(color);
-  }
+
 
   export { updateSceneBackground };
