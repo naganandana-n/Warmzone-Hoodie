@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,7 +161,7 @@
   </div>
 
   <div class="container">
-<!-- Audio -->
+
 <div class="feature">
   <span>Audio</span>
   <label class="toggle">
@@ -169,7 +170,7 @@
   </label>
 </div>
 
-    <!-- Screen -->
+
     <div class="feature">
       <span>Screen</span>
       <label class="toggle">
@@ -178,7 +179,7 @@
       </label>
     </div>
 
-    <!-- Mouse -->
+
     <div class="feature">
       <span>Mouse</span>
       <label class="toggle">
@@ -187,13 +188,13 @@
       </label>
     </div>
 
-    <!-- Mouse Sensitivity -->
+
     <div id="sensitivitySlider" class="feature sub-feature">
       <span>Sensitivity</span>
       <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
     </div>
 
-    <!-- Heaters (Only if mouse is off) -->
+
     <div id="heaterControls" class="sub-feature hidden">
       <div class="feature">
         <span>Heater 1</span>
@@ -209,7 +210,7 @@
       </div>
     </div>
 
-    <!-- Vibration -->
+
     <div class="feature">
       <span>Vibration</span>
       <label class="toggle">
@@ -218,7 +219,7 @@
       </label>
     </div>
 
-    <!-- Sync with Audio -->
+
     <div id="syncAudio" class="feature sub-feature hidden">
       <span>Sync with Audio</span>
       <label class="toggle">
@@ -228,12 +229,12 @@
     </div>
   </div>
 
-  <!-- Auto-connect Modal -->
+
   <div id="popupModal" class="modal hidden">
     <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
-  <!-- 🧠 Inject initial state from Flask -->
+
   <script>
     const initialState = {{ state|tojson }};
   </script>
@@ -391,3 +392,94 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   </script>
 </body>
 </html>
+-->
+
+<!-- ⬇️ Place this inside the <body> tag -->
+
+  <div class="header">
+    Nana Warmzone Controller
+    <button class="dark-toggle" id="darkModeToggle">Dark</button>
+  </div>
+  
+  <div class="container">
+    <!-- Tab Buttons -->
+    <div class="tab-bar">
+      <button class="tab-button active" data-tab="light">Light</button>
+      <button class="tab-button" data-tab="heaters">Heaters</button>
+      <button class="tab-button" data-tab="vibration">Vibration</button>
+    </div>
+  
+    <!-- Tab: Light -->
+    <div id="tab-light" class="tab-content">
+      <div class="feature">
+        <span>Audio</span>
+        <label class="toggle">
+          <input type="checkbox" id="audioToggle" />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+  
+      <div class="feature">
+        <span>Screen</span>
+        <label class="toggle">
+          <input type="checkbox" id="screenToggle" />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+    </div>
+  
+    <!-- Tab: Heaters -->
+    <div id="tab-heaters" class="tab-content hidden">
+      <div class="feature">
+        <span>Mouse</span>
+        <label class="toggle">
+          <input type="checkbox" id="mouseToggle" />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+  
+      <div id="sensitivitySlider" class="feature sub-feature">
+        <span>Sensitivity</span>
+        <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+      </div>
+  
+      <div id="heaterControls" class="sub-feature hidden">
+        <div class="feature">
+          <span>Heater 1</span>
+          <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
+        </div>
+        <div class="feature">
+          <span>Heater 2</span>
+          <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+        </div>
+        <div class="feature">
+          <span>Heater 3</span>
+          <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+        </div>
+      </div>
+    </div>
+  
+    <!-- Tab: Vibration -->
+    <div id="tab-vibration" class="tab-content hidden">
+      <div class="feature">
+        <span>Vibration</span>
+        <label class="toggle">
+          <input type="checkbox" id="vibrationToggle" />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+  
+      <div id="syncAudio" class="feature sub-feature hidden">
+        <span>Sync with Audio</span>
+        <label class="toggle">
+          <input type="checkbox" id="syncToggle" />
+          <span class="slider-round"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 🧪 Modal (unchanged) -->
+  <div id="popupModal" class="modal hidden">
+    <div class="modal-content" id="popupContent">Checking ESP32...</div>
+  </div>
