@@ -796,6 +796,24 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     socket.emit("shutdown");
   });
 </script>
+<script type="module">
+  import { updateModelByState } from "{{ url_for('static', filename='main.js') }}";
+
+  function refreshModelFromToggles() {
+    const audio = document.getElementById("audioToggle").checked;
+    const screen = document.getElementById("screenToggle").checked;
+    updateModelByState(audio, screen);
+  }
+
+  // Call this on load too
+  window.addEventListener("load", () => {
+    refreshModelFromToggles();
+  });
+
+  // Also call this after toggle changes
+  document.getElementById("audioToggle").addEventListener("change", refreshModelFromToggles);
+  document.getElementById("screenToggle").addEventListener("change", refreshModelFromToggles);
+</script>
 </body>
 </html>
 
