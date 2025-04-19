@@ -401,7 +401,6 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nana Warmzone Controller</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
   <style>
     :root {
       --bg: #f5f5f5;
@@ -449,41 +448,49 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       cursor: pointer;
     }
 
-    .container {
-      max-width: 500px;
-      margin: 2rem auto;
-      background-color: var(--card);
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .main-layout {
+      display: flex;
+      height: calc(100vh - 70px);
     }
 
-    .tab-bar {
+    .sidebar {
+      width: 240px;
+      background-color: var(--card);
+      border-right: 2px solid var(--slider-bg);
       display: flex;
-      justify-content: space-around;
-      margin-bottom: 1rem;
-      border-bottom: 2px solid var(--slider-bg);
+      flex-direction: column;
+      padding: 1rem;
     }
 
     .tab-button {
       background: none;
       border: none;
-      padding: 0.7rem 1.2rem;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.5rem;
       cursor: pointer;
       font-weight: bold;
       font-size: 1rem;
       color: var(--text);
-      border-bottom: 3px solid transparent;
+      border-left: 4px solid transparent;
+      text-align: left;
       transition: 0.2s ease;
     }
 
     .tab-button.active {
       border-color: #E22DA1;
       color: #E22DA1;
+      background-color: rgba(226, 45, 161, 0.05);
     }
 
-    .tab-content {
-      display: block;
+    .content-panel {
+      flex: 1;
+      padding: 2rem;
+      display: flex;
+      gap: 2rem;
+    }
+
+    .feature-panel {
+      width: 400px;
     }
 
     .feature {
@@ -552,6 +559,17 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       display: none !important;
     }
 
+    .model-placeholder {
+      flex: 1;
+      background: #ddd;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-style: italic;
+      color: #555;
+    }
+
     .modal {
       position: fixed;
       top: 0;
@@ -583,142 +601,100 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     <button class="dark-toggle" id="darkModeToggle">Dark</button>
   </div>
 
-  <div class="container">
-    <!-- Tab Buttons -->
-    <div class="tab-bar">
+  <div class="main-layout">
+    <div class="sidebar">
       <button class="tab-button active" data-tab="light">Light</button>
       <button class="tab-button" data-tab="heaters">Heaters</button>
       <button class="tab-button" data-tab="vibration">Vibration</button>
     </div>
 
-    <!-- Tab: Light -->
-    <div id="tab-light" class="tab-content">
-      <div class="feature">
-        <span>Audio</span>
-        <label class="toggle">
-          <input type="checkbox" id="audioToggle" />
-          <span class="slider-round"></span>
-        </label>
-      </div>
-
-      <div class="feature">
-        <span>Screen</span>
-        <label class="toggle">
-          <input type="checkbox" id="screenToggle" />
-          <span class="slider-round"></span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Tab: Heaters -->
-    <div id="tab-heaters" class="tab-content hidden">
-      <div class="feature">
-        <span>Mouse</span>
-        <label class="toggle">
-          <input type="checkbox" id="mouseToggle" />
-          <span class="slider-round"></span>
-        </label>
-      </div>
-
-      <div id="sensitivitySlider" class="feature sub-feature">
-        <span>Sensitivity</span>
-        <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
-      </div>
-
-      <div id="heaterControls" class="sub-feature hidden">
-        <div class="feature">
-          <span>Heater 1</span>
-          <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
+    <div class="content-panel">
+      <!-- Feature Panel -->
+      <div class="feature-panel">
+        <!-- Tab: Light -->
+        <div id="tab-light" class="tab-content">
+          <div class="feature">
+            <span>Audio</span>
+            <label class="toggle">
+              <input type="checkbox" id="audioToggle" />
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div class="feature">
+            <span>Screen</span>
+            <label class="toggle">
+              <input type="checkbox" id="screenToggle" />
+              <span class="slider-round"></span>
+            </label>
+          </div>
         </div>
-        <div class="feature">
-          <span>Heater 2</span>
-          <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+
+        <!-- Tab: Heaters -->
+        <div id="tab-heaters" class="tab-content hidden">
+          <div class="feature">
+            <span>Mouse</span>
+            <label class="toggle">
+              <input type="checkbox" id="mouseToggle" />
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <div id="sensitivitySlider" class="feature sub-feature">
+            <span>Sensitivity</span>
+            <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+          </div>
+
+          <div id="heaterControls" class="sub-feature hidden">
+            <div class="feature">
+              <span>Heater 1</span>
+              <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
+            </div>
+            <div class="feature">
+              <span>Heater 2</span>
+              <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+            </div>
+            <div class="feature">
+              <span>Heater 3</span>
+              <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+            </div>
+          </div>
         </div>
-        <div class="feature">
-          <span>Heater 3</span>
-          <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+
+        <!-- Tab: Vibration -->
+        <div id="tab-vibration" class="tab-content hidden">
+          <div class="feature">
+            <span>Vibration</span>
+            <label class="toggle">
+              <input type="checkbox" id="vibrationToggle" />
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <div id="syncAudio" class="feature sub-feature hidden">
+            <span>Sync with Audio</span>
+            <label class="toggle">
+              <input type="checkbox" id="syncToggle" />
+              <span class="slider-round"></span>
+            </label>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Tab: Vibration -->
-    <div id="tab-vibration" class="tab-content hidden">
-      <div class="feature">
-        <span>Vibration</span>
-        <label class="toggle">
-          <input type="checkbox" id="vibrationToggle" />
-          <span class="slider-round"></span>
-        </label>
-      </div>
-
-      <div id="syncAudio" class="feature sub-feature hidden">
-        <span>Sync with Audio</span>
-        <label class="toggle">
-          <input type="checkbox" id="syncToggle" />
-          <span class="slider-round"></span>
-        </label>
+      <!-- Model Placeholder -->
+      <div class="model-placeholder">
+        3D Hoodie Model Area (GLTF Viewer)
       </div>
     </div>
   </div>
 
-  <!-- Auto-connect Modal -->
   <div id="popupModal" class="modal hidden">
     <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
-  <!-- 🧠 Inject initial state from Flask -->
   <script>
     const initialState = {{ state|tojson }};
-  </script>
-
-  <script>
     const socket = io();
 
-    async function checkPorts() {
-      try {
-        const response = await fetch("/ports");
-        const result = await response.json();
-        const ports = result.ports;
-        const autoConnected = result.auto_connected;
-        const modal = document.getElementById("popupModal");
-        const content = document.getElementById("popupContent");
-
-        if (ports.length === 0) {
-          content.textContent = "Please connect your hoodie and relaunch the app. Please close this browser page";
-          modal.classList.remove("hidden");
-          setTimeout(() => { socket.emit("shutdown"); }, 5000);
-        } else if (autoConnected) {
-          content.textContent = "Hoodie connected!";
-          modal.classList.remove("hidden");
-          setTimeout(() => { modal.classList.add("hidden"); }, 3000);
-        }
-      } catch (err) {
-        console.error("Error fetching ports:", err);
-      }
-    }
-
-    let hoodiePreviouslyConnected = false;
-    async function monitorESPConnection() {
-      try {
-        const response = await fetch("/ports");
-        const result = await response.json();
-        const ports = result.ports;
-
-        if (hoodiePreviouslyConnected && ports.length === 0) {
-          const modal = document.getElementById("popupModal");
-          const content = document.getElementById("popupContent");
-          content.textContent = "Your hoodie has been disconnected. Please reconnect and relaunch the app. Please close this browser page.";
-          modal.classList.remove("hidden");
-          socket.emit("shutdown");
-        }
-
-        if (ports.length > 0) hoodiePreviouslyConnected = true;
-      } catch (err) {
-        console.error("ESP32 connection check failed:", err);
-      }
-    }
-
-    // ✅ Setup UI from control_state.json
     window.onload = () => {
       document.getElementById("audioToggle").checked = initialState.audio;
       document.getElementById("screenToggle").checked = initialState.screen;
@@ -739,51 +715,6 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       setInterval(monitorESPConnection, 5000);
     };
 
-    // Toggle & Slider Events
-    const mouseToggle = document.getElementById("mouseToggle");
-    const sensitivitySlider = document.getElementById("sensitivitySlider");
-    const heaterControls = document.getElementById("heaterControls");
-
-    mouseToggle.addEventListener("change", () => {
-      sensitivitySlider.classList.toggle("hidden", !mouseToggle.checked);
-      heaterControls.classList.toggle("hidden", mouseToggle.checked);
-      socket.emit("toggle", { key: "mouse" });
-    });
-
-    document.getElementById("vibrationToggle").addEventListener("change", (e) => {
-      document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
-      socket.emit("toggle", { key: "vibration" });
-    });
-
-    document.getElementById("syncToggle").addEventListener("change", () => {
-      socket.emit("toggle", { key: "sync_with_audio" });
-    });
-
-    document.getElementById("audioToggle").addEventListener("change", () => {
-      socket.emit("toggle", { key: "audio" });
-    });
-
-    document.getElementById("screenToggle").addEventListener("change", () => {
-      socket.emit("toggle", { key: "screen" });
-    });
-
-    document.getElementById("sensitivity").addEventListener("input", e => {
-      socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) });
-    });
-
-    document.getElementById("heater1").addEventListener("input", e => {
-      socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
-    });
-
-    document.getElementById("heater2").addEventListener("input", e => {
-      socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
-    });
-
-    document.getElementById("heater3").addEventListener("input", e => {
-      socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
-    });
-
-    // Tabs
     document.querySelectorAll('.tab-button').forEach(button => {
       button.addEventListener('click', () => {
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -794,7 +725,54 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       });
     });
 
-    // Dark Mode
+    document.getElementById("mouseToggle").addEventListener("change", (e) => {
+      const on = e.target.checked;
+      document.getElementById("sensitivitySlider").classList.toggle("hidden", !on);
+      document.getElementById("heaterControls").classList.toggle("hidden", on);
+      socket.emit("toggle", { key: "mouse" });
+    });
+
+    document.getElementById("vibrationToggle").addEventListener("change", (e) => {
+      document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
+      socket.emit("toggle", { key: "vibration" });
+    });
+
+    document.getElementById("syncToggle").addEventListener("change", () => socket.emit("toggle", { key: "sync_with_audio" }));
+    document.getElementById("audioToggle").addEventListener("change", () => socket.emit("toggle", { key: "audio" }));
+    document.getElementById("screenToggle").addEventListener("change", () => socket.emit("toggle", { key: "screen" }));
+    document.getElementById("sensitivity").addEventListener("input", e => socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) }));
+    document.getElementById("heater1").addEventListener("input", e => socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) }));
+    document.getElementById("heater2").addEventListener("input", e => socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) }));
+    document.getElementById("heater3").addEventListener("input", e => socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) }));
+
+    async function checkPorts() {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      const ports = result.ports;
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+
+      if (ports.length === 0) {
+        content.textContent = "Please connect your hoodie and relaunch the app. Please close this browser page";
+        modal.classList.remove("hidden");
+        setTimeout(() => { socket.emit("shutdown"); }, 5000);
+      } else if (result.auto_connected) {
+        content.textContent = "Hoodie connected!";
+        modal.classList.remove("hidden");
+        setTimeout(() => { modal.classList.add("hidden"); }, 3000);
+      }
+    }
+
+    async function monitorESPConnection() {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      if (result.ports.length === 0) {
+        document.getElementById("popupContent").textContent = "Your hoodie has been disconnected.";
+        document.getElementById("popupModal").classList.remove("hidden");
+        socket.emit("shutdown");
+      }
+    }
+
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
       document.body.classList.add("dark");
