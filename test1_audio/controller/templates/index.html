@@ -533,6 +533,30 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     .hidden {
       display: none !important;
     }
+    .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  color: var(--text);
+  font-size: 1.2rem;
+}
   </style>
 <script>
   const initialState = {{ state|tojson }};
