@@ -440,15 +440,21 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     }
 
     .dark-toggle {
-      position: absolute;
-      right: 1rem;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark-toggle:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
 
     .wrapper {
   display: flex;
