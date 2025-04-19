@@ -107,6 +107,37 @@ def toggle(data):
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
 
+@socketio.on("screen_selection_requested")
+def screen_selection_requested():
+    import time
+    from screen_selector import select_two_lines, get_equidistant_points  # Make sure this exists
+
+    SCREEN_POINTS_PATH = os.path.join(os.path.dirname(__file__), "screen_points.json")
+    NUM_LEDS = 24  # Update if your LED count changes
+
+    try:
+        print("🖱️ Screen selection confirmed. Preparing in 5 seconds...")
+        time.sleep(5)  # Let the user prepare their screen
+        lines = select_two_lines()
+
+        if not lines:
+            print("⚠️ No lines were selected.")
+            return
+
+        points = []
+        for p0, p1 in lines:
+            points.extend(get_equidistant_points(p0, p1, NUM_LEDS // 2))
+
+        with open(SCREEN_POINTS_PATH, "w") as f:
+            json.dump(points, f)
+
+        print(f"✅ Screen points saved to {SCREEN_POINTS_PATH} with {len(points)} points.")
+        socketio.emit("screen_selection_complete", {"points": len(points)})
+
+    except Exception as e:
+        print(f"❌ Error during screen line selection: {e}")
+        socketio.emit("screen_selection_complete", {"points": 0})
+
 
 def write_shutdown_flag():
     try:

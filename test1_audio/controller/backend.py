@@ -840,12 +840,23 @@ from queue import Queue, Empty
 from PIL import Image, ImageEnhance
 from scipy.spatial import distance
 import os
+from screen_selector import sample_colors_at
 
 # Track how many messages have been sent
 flush_counter = 0
 latest_json_data = None
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
+SCREEN_POINTS_PATH = os.path.join(os.path.dirname(__file__), "screen_points.json")
+
+def load_screen_points():
+    try:
+        with open(SCREEN_POINTS_PATH, "r") as f:
+            raw_points = json.load(f)
+            return [tuple(p) for p in raw_points]
+    except Exception as e:
+        print(f"⚠️ Failed to load screen_points.json: {e}")
+        return []
 SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
 
 def read_control_state():
@@ -1016,34 +1027,18 @@ BRIGHTNESS_THRESHOLD = 60
 NUM_DISTINCT_COLORS = 6
 COLOR_SIMILARITY_THRESHOLD = 80
 
-def get_screen_grid_colors():
-    """Capture screen colors and extract dominant ones."""
-    with mss.mss() as sct:
-        screen = sct.grab(sct.monitors[1])
-        img = np.array(screen)
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(img_rgb)
-        enhancer = ImageEnhance.Color(pil_img)
-        img_rgb = np.array(enhancer.enhance(1.4))
+def get_screen_line_colors():
+    points = load_screen_points()
+    if not points:
+        print("⚠️ No screen points loaded, returning fallback color.")
+        return [{"R": 237, "G": 45, "B": 161}] * 24  # fallback: Warmzone Purple
 
-        box_width = img_rgb.shape[1] // GRID_COLS
-        box_height = img_rgb.shape[0] // GRID_ROWS
-        grid_colors = []
-
-        for row in range(GRID_ROWS):
-            for col in range(GRID_COLS):
-                x1, y1 = col * box_width, row * box_height
-                x2, y2 = x1 + box_width, y1 + box_height
-                section = img_rgb[y1:y2, x1:x2]
-
-                avg_color = np.mean(section, axis=(0, 1)).astype(int)
-                r, g, b = avg_color.tolist()
-                brightness = np.sqrt(0.299 * (r**2) + 0.587 * (g**2) + 0.114 * (b**2))
-
-                if brightness > BRIGHTNESS_THRESHOLD:
-                    grid_colors.append({"R": r, "G": g, "B": b})
-
-        return grid_colors[:NUM_DISTINCT_COLORS]
+    try:
+        colors = sample_colors_at(points, window=3)
+        return [{"R": r, "G": g, "B": b} for (r, g, b) in colors]
+    except Exception as e:
+        print(f"❌ Failed to sample screen colors: {e}")
+        return [{"R": 237, "G": 45, "B": 161}] * 24
 
 def send_data():
     """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
@@ -1061,7 +1056,7 @@ def send_data():
 
         if control.get("lights_enabled", True):
             if control.get("screen", True):
-                json_data["LEDColors"] = get_screen_grid_colors()
+                json_data["LEDColors"] = get_screen_line_colors()
             if control.get("audio", True):
                 json_data["Brightness"] = audio_brightness
             json_data["lights_enabled"] = True

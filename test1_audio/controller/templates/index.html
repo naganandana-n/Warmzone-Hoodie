@@ -809,6 +809,35 @@ html, body {
     }
   }
 
+  function showScreenSelectionPopup() {
+  const modal = document.getElementById("popupModal");
+  const content = document.getElementById("popupContent");
+
+  content.innerHTML = `
+    <div style="margin-bottom: 1.5rem;">
+      You'll be asked to select LED zones on your screen.<br />
+      <strong>Get to your desired window.</strong><br/>
+      Proceed in 5 seconds?
+    </div>
+    <button id="confirmScreenSelection" style="margin-right: 1rem;">OK</button>
+    <button id="cancelScreenSelection">Cancel</button>
+  `;
+
+  modal.classList.remove("hidden");
+
+  document.getElementById("confirmScreenSelection").onclick = () => {
+    socket.emit("screen_selection_requested");
+    modal.classList.add("hidden");
+  };
+
+  document.getElementById("cancelScreenSelection").onclick = () => {
+    modal.classList.add("hidden");
+    const toggle = document.getElementById("screenToggle");
+    toggle.checked = false;
+    socket.emit("toggle", { key: "screen" });
+  };
+}
+
   let hoodiePreviouslyConnected = false;
 
   async function monitorESPConnection() {
@@ -894,8 +923,14 @@ window.latestControlState.lights_enabled = document.getElementById("lightToggle"
 });
 
 document.getElementById("screenToggle").addEventListener("change", (e) => {
-  window.latestControlState.screen = e.target.checked;
-  socket.emit("toggle", { key: "screen" });
+  const checked = e.target.checked;
+  window.latestControlState.screen = checked;
+
+  if (checked) {
+    showScreenSelectionPopup();  // launch custom confirmation modal
+  } else {
+    socket.emit("toggle", { key: "screen" });
+  }
 });
 
   document.getElementById("sensitivity").addEventListener("input", e => {
