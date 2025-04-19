@@ -5,18 +5,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/cont
 let scene, camera, renderer, model, controls;
 
 let currentModelIndex = 0;
-const modelFiles = ['/static/hoodie1.gltf', '/static/hoodie2.gltf']; // Add more as needed
-
-export function updateModelByState(audio, screen) {
-    const target = (audio || screen) ? 'hoodie2.gltf' : 'hoodie1.gltf';
-  
-    // Don't reload if it's already the active model
-    if (modelFiles[currentModelIndex] !== target) {
-      const prevRotation = model ? model.rotation.y : 0;
-      currentModelIndex = modelFiles.indexOf(target);
-      loadModel(target, prevRotation);
-    }
-  }
+const modelFiles = ['hoodie1.gltf', 'hoodie2.gltf']; // Add more as needed
 
 // Only compute these once
 let fixedCameraZ = null;
@@ -32,10 +21,9 @@ function init() {
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.5, 3);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  const canvas = document.getElementById("threeCanvas");
-renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  const canvas = document.getElementById('threeCanvas');
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -58,10 +46,9 @@ renderer.setSize(canvas.clientWidth, canvas.clientHeight);
   scene.add(ambientLight);
 
   window.addEventListener('resize', () => {
-    const canvas = document.getElementById("threeCanvas");
-    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
   // Hook up the model switch button

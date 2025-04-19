@@ -594,7 +594,8 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
-  <div class="wrapper">
+  <div style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
+    <div class="wrapper" style="width: 30%; min-width: 300px;">
 
 <div class="container">
   <h2>Light</h2>
@@ -661,6 +662,9 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
       </div>
     </div>
   </div>
+  <!-- Right-hand side 3D canvas -->
+<canvas id="threeCanvas" style="flex: 1;"></canvas>
+</div> <!-- end of flex container -->
 <script>
   const socket = io();
 
@@ -796,6 +800,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     socket.emit("shutdown");
   });
 </script>
+<script type="module" src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
 
