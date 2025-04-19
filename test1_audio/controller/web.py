@@ -30,7 +30,8 @@ def load_state_from_json():
             "sensitivity": 3,
             "heaters": [1, 1, 1],
             "vibration": False,
-            "sync_with_audio": False
+            "sync_with_audio": False,
+            "lights_enabled": True
         }
 
 state = load_state_from_json()
@@ -100,6 +101,8 @@ def toggle(data):
         state["heaters"][idx] = data["value"]
     elif key in state and isinstance(state[key], bool):
         state[key] = not state[key]
+    elif key == "lights_enabled":
+        state["lights_enabled"] = not state.get("lights_enabled", True) 
 
     print(f"🔄 Updated state: {state}")
     write_state_to_json()

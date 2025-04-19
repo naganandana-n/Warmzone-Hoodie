@@ -825,7 +825,6 @@ if __name__ == "__main__":
     main_thread.join()
 '''
 
-
 import time
 import json
 import threading
@@ -1060,18 +1059,20 @@ def send_data():
 
         json_data = {}
 
-        # Conditionally include data based on UI toggle
-        if control.get("screen", True):
-            colors = get_screen_grid_colors()
-            json_data["LEDColors"] = colors
+        if control.get("lights_enabled", True):
+            if control.get("screen", True):
+                json_data["LEDColors"] = get_screen_grid_colors()
+            if control.get("audio", True):
+                json_data["Brightness"] = audio_brightness
+            json_data["lights_enabled"] = True
+        else:
+            json_data["lights_enabled"] = False
 
         if control.get("audio", True):
             json_data["Brightness"] = audio_brightness
 
         if control.get("mouse", True):
             json_data["MouseSpeed"] = calculate_scaled_speed()
-        if control.get("lights_enabled", True):
-            json_data["lights_enabled"] = True
 
         # Future support
         json_data["sensitivity"] = control.get("sensitivity", 3)
@@ -1079,7 +1080,7 @@ def send_data():
         json_data["vibration"] = control.get("vibration", False)
         json_data["sync_with_audio"] = control.get("sync_with_audio", False)
 
-        
+        # Send to ESP32
         json_str = json.dumps(json_data)
         global latest_json_data
         latest_json_data = json_str
