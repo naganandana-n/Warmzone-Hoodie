@@ -453,15 +453,11 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     .wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: flex-start;
+  gap: 2rem;
   padding: 2rem;
-  width: 40%;
-  min-width: 320px;
-  background-color: var(--bg);
-  color: var(--text);
-  box-sizing: border-box;
-  overflow-y: auto;           /* ✅ Allow scrolling */
-  max-height: calc(100vh - 80px); /* ✅ Prevent stretching past viewport */
+  max-width: none;       /* Remove the centering constraint */
+  margin-left: 2rem;     /* Add some padding from the left */
 }
 
     .container {
@@ -610,6 +606,12 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
   height: 100%;
   display: block;
   background-color: var(--bg);
+}
+
+@media (max-width: 1200px) {
+  #canvasContainer {
+    display: none;
+  }
 }
   </style>
 <script>
