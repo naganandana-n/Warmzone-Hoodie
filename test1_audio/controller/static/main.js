@@ -5,14 +5,14 @@ import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/cont
 let scene, camera, renderer, model, controls;
 
 let currentModelIndex = 0;
-const modelFiles = ['hoodie1.gltf', 'hoodie2.gltf']; // Add more as needed
+const modelFiles = ['/static/hoodie1.gltf', '/static/hoodie2.gltf']; // Add more as needed
 
 // Only compute these once
 let fixedCameraZ = null;
 let fixedTargetY = null;
 
 init();
-loadModel(modelFiles[currentModelIndex]);
+loadModel('/static/hoodie1.gltf');
 
 function init() {
   scene = new THREE.Scene();
@@ -21,7 +21,7 @@ function init() {
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 1.5, 3);
 
-  const canvas = document.getElementById('threeCanvas');
+  const canvas = document.getElementById("threeCanvas");
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
   renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 
