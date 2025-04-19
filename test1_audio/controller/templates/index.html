@@ -743,7 +743,8 @@ html, body {
   audio: false,
   screen: false,
   mouse: false,
-  vibration: false
+  vibration: false,
+  heaters: [0, 0, 0]
 };
 
   async function checkPorts() {
@@ -818,7 +819,8 @@ html, body {
   audio: initialState.audio,
   screen: initialState.screen,
   mouse: initialState.mouse,
-  vibration: initialState.vibration
+  vibration: initialState.vibration,
+  heaters: [...initialState.heaters]
 };
   };
 
