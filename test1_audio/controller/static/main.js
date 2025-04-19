@@ -4,8 +4,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/cont
 
 let scene, camera, renderer, model, controls;
 
-let currentModelIndex = 0;
-const modelFiles = ['/static/hoodie1.gltf', '/static/hoodie2.gltf']; // Add more as needed
+let lastModelCode = null;
 
 // Only compute these once
 let fixedCameraZ = null;
@@ -19,7 +18,7 @@ function updateSceneBackground() {
     const color = isDark ? 0x121212 : 0xf0f0f0;
     scene.background = new THREE.Color(color);
   }
-  
+
 function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf0f0f0);
@@ -133,6 +132,7 @@ function animate() {
       camera.updateProjectionMatrix();
     }
   
+    updateModelFromState();
     controls.update();
     renderer.render(scene, camera);
   }
@@ -147,6 +147,23 @@ function animate() {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+  }
+
+  function computeModelFile() {
+    const state = window.latestControlState || { audio: false, screen: false, mouse: false, heaters: [0, 0, 0], vibration: false };
+    const light = state.audio || state.screen ? 1 : 0;
+    const heater = state.mouse || state.heaters?.some(h => h > 0) ? 1 : 0;
+    const vibration = state.vibration ? 1 : 0;
+    const code = `${light}${heater}${vibration}`;
+    return `hoodie${code}.gltf`;
+  }
+
+  function updateModelFromState() {
+    const modelFile = computeModelFile();
+    if (modelFile !== lastModelCode) {
+      lastModelCode = modelFile;
+      loadModel(`/static/${modelFile}`, model?.rotation.y || 0);
+    }
   }
 
 

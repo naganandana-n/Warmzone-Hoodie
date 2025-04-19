@@ -739,6 +739,12 @@ html, body {
 
 <script>
   const socket = io();
+  window.latestControlState = {
+  audio: false,
+  screen: false,
+  mouse: false,
+  vibration: false
+};
 
   async function checkPorts() {
     try {
@@ -807,25 +813,34 @@ html, body {
 
     checkPorts();
     setInterval(monitorESPConnection, 5000);
+
+    window.latestControlState = {
+  audio: initialState.audio,
+  screen: initialState.screen,
+  mouse: initialState.mouse,
+  vibration: initialState.vibration
+};
   };
 
   const mouseToggle = document.getElementById("mouseToggle");
   const sensitivitySlider = document.getElementById("sensitivitySlider");
   const heaterControls = document.getElementById("heaterControls");
 
-  mouseToggle.addEventListener("change", () => {
-    if (mouseToggle.checked) {
-      sensitivitySlider.classList.remove("hidden");
-      heaterControls.classList.add("hidden");
-    } else {
-      sensitivitySlider.classList.add("hidden");
-      heaterControls.classList.remove("hidden");
-    }
-    socket.emit("toggle", { key: "mouse" });
-  });
+  mouseToggle.addEventListener("change", (e) => {
+  if (mouseToggle.checked) {
+    sensitivitySlider.classList.remove("hidden");
+    heaterControls.classList.add("hidden");
+  } else {
+    sensitivitySlider.classList.add("hidden");
+    heaterControls.classList.remove("hidden");
+  }
+  window.latestControlState.mouse = e.target.checked;
+  socket.emit("toggle", { key: "mouse" });
+});
 
   document.getElementById("vibrationToggle").addEventListener("change", (e) => {
     document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
+    window.latestControlState.vibration = e.target.checked;
     socket.emit("toggle", { key: "vibration" });
   });
 
@@ -833,27 +848,32 @@ html, body {
     socket.emit("toggle", { key: "sync_with_audio" });
   });
 
-  document.getElementById("audioToggle").addEventListener("change", () => {
-    socket.emit("toggle", { key: "audio" });
-  });
+  document.getElementById("audioToggle").addEventListener("change", (e) => {
+  window.latestControlState.audio = e.target.checked;
+  socket.emit("toggle", { key: "audio" });
+});
 
-  document.getElementById("screenToggle").addEventListener("change", () => {
-    socket.emit("toggle", { key: "screen" });
-  });
+document.getElementById("screenToggle").addEventListener("change", (e) => {
+  window.latestControlState.screen = e.target.checked;
+  socket.emit("toggle", { key: "screen" });
+});
 
   document.getElementById("sensitivity").addEventListener("input", e => {
     socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) });
   });
 
   document.getElementById("heater1").addEventListener("input", e => {
-    socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
-  });
-  document.getElementById("heater2").addEventListener("input", e => {
-    socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
-  });
-  document.getElementById("heater3").addEventListener("input", e => {
-    socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
-  });
+  window.latestControlState.heaters[0] = parseInt(e.target.value);
+  socket.emit("toggle", { key: "heater1", value: parseInt(e.target.value) });
+});
+document.getElementById("heater2").addEventListener("input", e => {
+  window.latestControlState.heaters[1] = parseInt(e.target.value);
+  socket.emit("toggle", { key: "heater2", value: parseInt(e.target.value) });
+});
+document.getElementById("heater3").addEventListener("input", e => {
+  window.latestControlState.heaters[2] = parseInt(e.target.value);
+  socket.emit("toggle", { key: "heater3", value: parseInt(e.target.value) });
+});
 
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme === "dark") {

@@ -64,8 +64,10 @@ if errorlevel 1 (
 )
 
 REM === Launch both scripts in persistent terminals ===
-start /B "" cmd /k "%PYTHON_EXE% %WEB_PY%"
-start /B "" cmd /k "%PYTHON_EXE% %BACKEND_PY%"
+REM start /B "" cmd /k "%PYTHON_EXE% %WEB_PY%"
+
+start /B "" "%PYTHON_EXE%" "%WEB_PY%"
+start /B "" "%PYTHON_EXE%" "%BACKEND_PY%"
 
 echo 🟢 Terminals launched. Close them manually when done.
 exit

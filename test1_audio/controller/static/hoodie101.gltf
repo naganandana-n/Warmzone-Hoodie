@@ -388,10 +388,8 @@
       "name": "FABRIC_3_FRONT_1850",
       "pbrMetallicRoughness": {
         "baseColorFactor": [
-          0.14902,
-          0.14902,
-          0.14902,
-          1.0
+     0.0, 0.8, 0.8, 1.0
+
         ],
         "metallicFactor": 0.0,
         "roughnessFactor": 0.9808378773704748
