@@ -622,8 +622,13 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
 
   .wrapper {
     width: 100% !important;
-    margin: 0 auto;
+    margin: 0 auto;              /* ✅ Center horizontally */
     padding: 2rem;
+    align-items: center;         /* ✅ Center content inside */
+  }
+
+  .container {
+    width: 90%;                  /* ✅ Slightly narrower for smaller screens */
   }
 }
   </style>
