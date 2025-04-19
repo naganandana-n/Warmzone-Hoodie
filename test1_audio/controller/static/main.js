@@ -63,6 +63,10 @@ renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
   }
 
   animate();
+  // Force a resize after layout stabilizes
+setTimeout(() => {
+    resizeCanvas();
+  }, 100); // You can increase to 200ms if needed
 }
 
 function loadModel(file = 'hoodie1.gltf', preserveRotation = 0) {
@@ -124,4 +128,16 @@ function animate() {
   
     controls.update();
     renderer.render(scene, camera);
+  }
+
+  function resizeCanvas() {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+  
+    if (width === 0 || height === 0) return; // prevent divide by zero
+  
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
   }
