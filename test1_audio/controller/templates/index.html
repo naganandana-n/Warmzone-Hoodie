@@ -594,7 +594,8 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     <div class="modal-content" id="popupContent">Checking ESP32...</div>
   </div>
 
-  <div class="wrapper">
+  <div style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
+    <div class="wrapper" style="width: 30%; min-width: 300px;">
 
 <div class="container">
   <h2>Light</h2>
@@ -805,15 +806,13 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
     updateModelByState(audio, screen);
   }
 
-  // Call this on load too
-  window.addEventListener("load", () => {
-    refreshModelFromToggles();
-  });
-
-  // Also call this after toggle changes
+  window.addEventListener("load", refreshModelFromToggles);
   document.getElementById("audioToggle").addEventListener("change", refreshModelFromToggles);
   document.getElementById("screenToggle").addEventListener("change", refreshModelFromToggles);
 </script>
+</div> <!-- end of wrapper -->
+<canvas id="threeCanvas" style="flex: 1;"></canvas>
+</div> <!-- end of flex container -->
 </body>
 </html>
 
