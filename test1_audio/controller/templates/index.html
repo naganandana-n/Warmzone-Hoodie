@@ -657,6 +657,15 @@ html, body {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
+
+.wrapper {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ */
+}
+
+.wrapper::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
+}
   </style>
 <script>
   const initialState = {{ state|tojson }};
@@ -702,6 +711,7 @@ html, body {
       <span class="slider-round"></span>
     </label>
   </div>
+</div>
 </div>
   
       <div class="container">
