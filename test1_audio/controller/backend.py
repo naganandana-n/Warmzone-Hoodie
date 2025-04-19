@@ -551,7 +551,8 @@ def read_control_state():
             "sensitivity": 3,
             "heaters": [1, 1, 1],
             "vibration": False,
-            "sync_with_audio": False
+            "sync_with_audio": False,
+            "lights_enabled": True
         }
 
 def was_shutdown_requested():
@@ -753,12 +754,17 @@ def send_data():
         json_data = {}
 
         # Conditionally include data based on UI toggle
-        if control.get("screen", True):
-            colors = get_screen_grid_colors()
-            json_data["LEDColors"] = colors
+        if control.get("lights_enabled", True):
+            if control.get("screen", True):
+                colors = get_screen_grid_colors()
+                json_data["LEDColors"] = colors
 
-        if control.get("audio", True):
-            json_data["Brightness"] = audio_brightness
+            if control.get("audio", True):
+                json_data["Brightness"] = audio_brightness
+        else:
+        # Force ESP32 to turn off LEDs
+            json_data["LEDColors"] = []
+            json_data["Brightness"] = 0
 
         if control.get("mouse", True):
             json_data["MouseSpeed"] = calculate_scaled_speed()

@@ -400,7 +400,7 @@ document.getElementById("darkModeToggle").addEventListener("click", () => {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Nana Warmzone Controller</title>
+  <title>Nana Warmzone</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <style>
@@ -665,7 +665,7 @@ html, body {
 <body>
   <div class="header">
     <div class="header-content">
-      <div class="title">Nana Warmzone Controller</div>
+      <div class="title">Nana Warmzone</div>
       <!-- <img src="/logo.png" alt="Logo" class="logo" /> -->
     </div>
     <button class="dark-toggle" id="darkModeToggle">Dark</button>
@@ -679,21 +679,30 @@ html, body {
     <div class="wrapper">
       <div class="container">
         <h2>Light</h2>
-        <div class="feature">
-          <span>Brightness from <strong>Audio</strong></span>
-          <label class="toggle">
-            <input type="checkbox" id="audioToggle" />
-            <span class="slider-round"></span>
-          </label>
-        </div>
-        <div class="feature">
-          <span>Color from <strong>Screen</strong></span>
-          <label class="toggle">
-            <input type="checkbox" id="screenToggle" />
-            <span class="slider-round"></span>
-          </label>
-        </div>
-      </div>
+<div class="feature">
+  <span><strong>Enable Lights</strong></span>
+  <label class="toggle">
+    <input type="checkbox" id="lightToggle" checked />
+    <span class="slider-round"></span>
+  </label>
+</div>
+
+<div id="lightSubfeatures">
+  <div class="feature">
+    <span>Brightness from <strong>Audio</strong></span>
+    <label class="toggle">
+      <input type="checkbox" id="audioToggle" />
+      <span class="slider-round"></span>
+    </label>
+  </div>
+  <div class="feature">
+    <span>Color from <strong>Screen</strong></span>
+    <label class="toggle">
+      <input type="checkbox" id="screenToggle" />
+      <span class="slider-round"></span>
+    </label>
+  </div>
+</div>
   
       <div class="container">
         <h2>Heaters</h2>
@@ -755,6 +764,7 @@ html, body {
 <script>
   const socket = io();
   window.latestControlState = {
+    lights_enabled: true,
   audio: false,
   screen: false,
   mouse: false,
@@ -812,6 +822,9 @@ html, body {
   }
 
   window.onload = () => {
+    document.getElementById("lightToggle").checked = initialState.lights_enabled ?? true;
+document.getElementById("lightSubfeatures").classList.toggle("hidden", !document.getElementById("lightToggle").checked);
+window.latestControlState.lights_enabled = document.getElementById("lightToggle").checked;
     document.getElementById("audioToggle").checked = initialState.audio;
     document.getElementById("screenToggle").checked = initialState.screen;
     document.getElementById("mouseToggle").checked = initialState.mouse;
@@ -899,6 +912,14 @@ document.getElementById("heater3").addEventListener("input", e => {
   socket.emit("toggle", { key: "heater3", value: val });
 
   updateModelFromState();
+});
+
+document.getElementById("lightToggle").addEventListener("change", (e) => {
+  const enabled = e.target.checked;
+  window.latestControlState.lights_enabled = enabled;
+  document.getElementById("lightSubfeatures").classList.toggle("hidden", !enabled);
+  socket.emit("toggle", { key: "lights_enabled", value: enabled });
+  updateModelFromState(); // ✅ Make sure model updates visually too
 });
 
   const savedTheme = localStorage.getItem("theme");
