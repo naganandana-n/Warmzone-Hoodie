@@ -846,6 +846,30 @@ html, body {
 .wrapper::-webkit-scrollbar {
   display: none;                /* Chrome, Safari */
 }
+
+#popupButtons button {
+  background-color: #E22DA1;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  margin: 0 0.5rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#popupButtons button:hover {
+  background-color: #c41c87;
+  transform: translateY(-2px);
+}
+
+#popupButtons {
+  display: flex;
+  justify-content: center;
+}
   </style>
 <script>
   const initialState = {{ state|tojson }};
