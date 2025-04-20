@@ -67,17 +67,8 @@ class LineSelector(tk.Tk):
 
 def main():
     app = LineSelector(num_lines=2, leds_per_line=NUM_LEDS // 2)
-    if sys.platform == "win32":
-        try:
-            # Find the window with class name "TkTopLevel"
-            hwnd = ctypes.windll.user32.FindWindowW("TkTopLevel", None)
-            if hwnd != 0:
-                ctypes.windll.user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-                ctypes.windll.user32.SetForegroundWindow(hwnd)
-        except Exception as e:
-            print(f"⚠️ Could not bring selector to front: {e}")
-
-    
+    # ✅ Bring window to front using pure Tkinter
+    app.after(100, lambda: bring_to_front(app))
     app.mainloop()
 
     # Round and save points as list of dicts for easy JSON use
@@ -87,6 +78,15 @@ def main():
     with open(output_path, "w") as f:
         json.dump(rounded_points, f, indent=2)
     print(f"✅ Saved {len(rounded_points)} LED points to {output_path}")
+
+def bring_to_front(app):
+    try:
+        app.lift()
+        app.attributes("-topmost", True)
+        app.focus_force()
+        app.after(2000, lambda: app.attributes("-topmost", False))  # reset after 2s
+    except Exception as e:
+        print(f"⚠️ Failed to bring selector to front: {e}")
 
 if __name__ == "__main__":
     main()
