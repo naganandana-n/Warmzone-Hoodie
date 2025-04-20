@@ -1,0 +1,14 @@
+{
+  "audio": true,
+  "screen": false,
+  "mouse": false,
+  "sensitivity": 0,
+  "heaters": [
+    0,
+    0,
+    0
+  ],
+  "vibration": false,
+  "sync_with_audio": false,
+  "lights_enabled": true
+}

@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nana Warmzone</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --text: #333;
+      --card: white;
+      --slider-bg: #ccc;
+      --header-bg: #E22DA1;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #fff;
+      --card: #1e1e1e;
+      --slider-bg: #444;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: 0.3s;
+    }
+
+    .header {
+      background-color: var(--header-bg);
+      padding: 1rem;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .dark-toggle {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark-toggle:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+    .wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  width: 40%;
+  min-width: 320px;
+  background-color: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+  margin-left: 3rem;
+
+  /* ✅ Add these */
+  max-height: calc(100vh - 80px); /* leave room for the header */
+  overflow-y: auto;
+}
+
+    .container {
+      background-color: var(--card);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 70%;
+    }
+
+    .feature {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 1rem 0;
+    }
+
+    .sub-feature {
+      margin-left: 1.5rem;
+    }
+
+    .slider {
+      width: 150px;
+      margin-left: 1rem;
+      accent-color: #E22DA1;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider-round {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--slider-bg);
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+
+    .slider-round:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider-round {
+      background-color: #E22DA1;
+    }
+
+    input:checked + .slider-round:before {
+      transform: translateX(22px);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+    .modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--card);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.logo {
+  height: 80px;
+  object-fit: contain;
+}
+
+.main-content {
+  display: flex;
+  height: calc(100vh - 80px); /* Adjust to leave space for the header */
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  width: 40%;
+  min-width: 320px;
+  background-color: var(--bg); /* ✅ Inherits theme */
+  color: var(--text);
+  box-sizing: border-box;
+  height: 100%; 
+}
+
+.canvas-container {
+  flex: 1;
+  position: relative;
+  background-color: var(--bg);
+}
+
+#threeCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-color: var(--bg);
+}
+
+@media (max-width: 1200px) {
+  .canvas-container {
+    display: none;
+  }
+
+  .wrapper {
+    width: 100% !important;
+    margin: 0 auto;              /* ✅ Center horizontally */
+    padding: 2rem;
+    align-items: center;         /* ✅ Center content inside */
+  }
+
+  .container {
+    width: 90%;                  /* ✅ Slightly narrower for smaller screens */
+  }
+}
+
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  background-color: var(--bg);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.container {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.wrapper {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ */
+}
+
+.wrapper::-webkit-scrollbar {
+  display: none;                /* Chrome, Safari */
+}
+  </style>
+<script>
+  const initialState = {{ state|tojson }};
+</script>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <div class="title">Nana Warmzone</div>
+      <!-- <img src="/logo.png" alt="Logo" class="logo" /> -->
+    </div>
+    <button class="dark-toggle" id="darkModeToggle">Dark</button>
+  </div>
+
+  <div id="popupModal" class="modal hidden">
+    <div class="modal-content" id="popupContent">Checking ESP32...</div>
+  </div>
+
+  <div class="main-content">
+    <div class="wrapper">
+      <div class="container">
+        <h2>Light</h2>
+<div class="feature">
+  <span>Enable Lights</span>
+  <label class="toggle">
+    <input type="checkbox" id="lightToggle" checked />
+    <span class="slider-round"></span>
+  </label>
+</div>
+
+<div id="lightSubfeatures">
+  <div class="feature">
+    <span>Brightness from <strong>Audio</strong></span>
+    <label class="toggle">
+      <input type="checkbox" id="audioToggle" />
+      <span class="slider-round"></span>
+    </label>
+  </div>
+  <div class="feature">
+    <span>Color from <strong>Screen</strong></span>
+    <label class="toggle">
+      <input type="checkbox" id="screenToggle" />
+      <span class="slider-round"></span>
+    </label>
+  </div>
+</div>
+</div>
+  
+      <div class="container">
+        <h2>Heaters</h2>
+        <div class="feature">
+          <span>Control Heaters by <strong>Mouse Speed</strong></span>
+          <label class="toggle">
+            <input type="checkbox" id="mouseToggle" />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+        <div id="sensitivitySlider" class="feature sub-feature">
+          <span>Sensitivity</span>
+          <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+        </div>
+        <div id="heaterControls" class="sub-feature hidden">
+          <div class="feature">
+            <span><strong>Shoulder</strong> Heater</span>
+            <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
+          </div>
+          <div class="feature">
+            <span><strong>Pelvic</strong> Heater</span>
+            <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+          </div>
+          <div class="feature">
+            <span><strong>Lower Back</strong> Heater</span>
+            <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+          </div>
+        </div>
+      </div>
+  
+      <div class="container">
+        <h2>Vibration</h2>
+        <div class="feature">
+          <span>Enable Vibration</span>
+          <label class="toggle">
+            <input type="checkbox" id="vibrationToggle" />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+        <div id="syncAudio" class="feature sub-feature hidden">
+          <span>Sync Vibration with Audio</span>
+          <label class="toggle">
+            <input type="checkbox" id="syncToggle" />
+            <span class="slider-round"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Right-hand side 3D canvas -->
+    <div class="canvas-container">
+      <canvas id="threeCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  const socket = io();
+  window.latestControlState = {
+    lights_enabled: true,
+  audio: false,
+  screen: false,
+  mouse: false,
+  vibration: false,
+  heaters: [0, 0, 0]
+};
+
+  async function checkPorts() {
+    try {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      const ports = result.ports;
+      const autoConnected = result.auto_connected;
+      const modal = document.getElementById("popupModal");
+      const content = document.getElementById("popupContent");
+
+      if (ports.length === 0) {
+        content.textContent = "Please connect your hoodie and relaunch the app. Please close this browser page";
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          socket.emit("shutdown");
+        }, 5000);
+      } else if (autoConnected) {
+        content.textContent = "Hoodie connected!";
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          modal.classList.add("hidden");
+        }, 3000);
+      }
+    } catch (err) {
+      console.error("Error fetching ports:", err);
+    }
+  }
+
+  let hoodiePreviouslyConnected = false;
+
+  async function monitorESPConnection() {
+    try {
+      const response = await fetch("/ports");
+      const result = await response.json();
+      const ports = result.ports;
+
+      if (hoodiePreviouslyConnected && ports.length === 0) {
+        const modal = document.getElementById("popupModal");
+        const content = document.getElementById("popupContent");
+        content.textContent = "Your hoodie has been disconnected. Please reconnect and relaunch the app.";
+        modal.classList.remove("hidden");
+        socket.emit("shutdown");
+      }
+
+      if (ports.length > 0) hoodiePreviouslyConnected = true;
+    } catch (err) {
+      console.error("ESP32 connection check failed:", err);
+    }
+  }
+
+  window.onload = () => {
+    document.getElementById("lightToggle").checked = initialState.lights_enabled ?? true;
+document.getElementById("lightSubfeatures").classList.toggle("hidden", !document.getElementById("lightToggle").checked);
+window.latestControlState.lights_enabled = document.getElementById("lightToggle").checked;
+    document.getElementById("audioToggle").checked = initialState.audio;
+    document.getElementById("screenToggle").checked = initialState.screen;
+    document.getElementById("mouseToggle").checked = initialState.mouse;
+    document.getElementById("vibrationToggle").checked = initialState.vibration;
+    document.getElementById("syncToggle").checked = initialState.sync_with_audio;
+
+    document.getElementById("sensitivity").value = initialState.sensitivity;
+    document.getElementById("heater1").value = initialState.heaters[0];
+    document.getElementById("heater2").value = initialState.heaters[1];
+    document.getElementById("heater3").value = initialState.heaters[2];
+
+    document.getElementById("sensitivitySlider").classList.toggle("hidden", !initialState.mouse);
+    document.getElementById("heaterControls").classList.toggle("hidden", initialState.mouse);
+    document.getElementById("syncAudio").classList.toggle("hidden", !initialState.vibration);
+
+    checkPorts();
+    setInterval(monitorESPConnection, 5000);
+
+    window.latestControlState = {
+  audio: initialState.audio,
+  screen: initialState.screen,
+  mouse: initialState.mouse,
+  vibration: initialState.vibration,
+  heaters: [...initialState.heaters]
+};
+  };
+
+  const mouseToggle = document.getElementById("mouseToggle");
+  const sensitivitySlider = document.getElementById("sensitivitySlider");
+  const heaterControls = document.getElementById("heaterControls");
+
+  mouseToggle.addEventListener("change", (e) => {
+  if (mouseToggle.checked) {
+    sensitivitySlider.classList.remove("hidden");
+    heaterControls.classList.add("hidden");
+  } else {
+    sensitivitySlider.classList.add("hidden");
+    heaterControls.classList.remove("hidden");
+  }
+  window.latestControlState.mouse = e.target.checked;
+  socket.emit("toggle", { key: "mouse" });
+});
+
+  document.getElementById("vibrationToggle").addEventListener("change", (e) => {
+    document.getElementById("syncAudio").classList.toggle("hidden", !e.target.checked);
+    window.latestControlState.vibration = e.target.checked;
+    socket.emit("toggle", { key: "vibration" });
+  });
+
+  document.getElementById("syncToggle").addEventListener("change", () => {
+    socket.emit("toggle", { key: "sync_with_audio" });
+  });
+
+  document.getElementById("audioToggle").addEventListener("change", (e) => {
+  window.latestControlState.audio = e.target.checked;
+  socket.emit("toggle", { key: "audio" });
+});
+
+document.getElementById("screenToggle").addEventListener("change", (e) => {
+  window.latestControlState.screen = e.target.checked;
+  socket.emit("toggle", { key: "screen" });
+});
+
+  document.getElementById("sensitivity").addEventListener("input", e => {
+    socket.emit("toggle", { key: "sensitivity", value: parseInt(e.target.value) });
+  });
+
+  document.getElementById("heater1").addEventListener("input", e => {
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[0] = val;
+  socket.emit("toggle", { key: "heater1", value: val });
+
+  updateModelFromState(); // ✅ Trigger model change if needed
+});
+document.getElementById("heater2").addEventListener("input", e => {
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[1] = val;
+  socket.emit("toggle", { key: "heater2", value: val });
+
+  updateModelFromState();
+});
+document.getElementById("heater3").addEventListener("input", e => {
+  const val = parseInt(e.target.value);
+  window.latestControlState.heaters[2] = val;
+  socket.emit("toggle", { key: "heater3", value: val });
+
+  updateModelFromState();
+});
+
+document.getElementById("lightToggle").addEventListener("change", (e) => {
+  const enabled = e.target.checked;
+  window.latestControlState.lights_enabled = enabled;
+  document.getElementById("lightSubfeatures").classList.toggle("hidden", !enabled);
+  socket.emit("toggle", { key: "lights_enabled", value: enabled });
+  updateModelFromState(); // ✅ Make sure model updates visually too
+});
+
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "dark") {
+    document.body.classList.add("dark");
+    document.getElementById("darkModeToggle").textContent = "Light";
+  }
+
+
+
+  window.addEventListener("beforeunload", () => {
+    socket.emit("shutdown");
+  });
+</script>
+<!-- Load main.js as module first -->
+<script type="module" src="{{ url_for('static', filename='main.js') }}"></script>
+
+<!-- Then call the exported function in a separate module script -->
+<script type="module">
+  import { updateSceneBackground } from "{{ url_for('static', filename='main.js') }}";
+
+  document.getElementById("darkModeToggle").addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+    document.getElementById("darkModeToggle").textContent = isDark ? "Light" : "Dark";
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+
+    // ✅ Update canvas background based on dark mode
+    updateSceneBackground();
+  });
+
+  // Also update immediately if theme was saved previously
+  if (document.body.classList.contains("dark")) {
+    updateSceneBackground();
+  }
+</script>
+</body>
+</html>
