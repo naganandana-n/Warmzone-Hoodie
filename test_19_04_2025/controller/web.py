@@ -428,13 +428,12 @@ def check_led_points():
 
 @app.route("/launch_selector")
 def launch_selector():
-    def delayed_selector():
-        from screen_selector_bridge import launch_if_needed
-        time.sleep(5)
-        launch_if_needed()
-
-    threading.Thread(target=delayed_selector).start()
-    return jsonify({"status": "selector_started"})
+    try:
+        script_path = os.path.join(os.path.dirname(__file__), "generate_led_points.py")
+        subprocess.Popen(["python", script_path], cwd=os.path.dirname(__file__))
+        return jsonify({"status": "selector_started"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 
 if __name__ == "__main__":
