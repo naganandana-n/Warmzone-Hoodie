@@ -535,7 +535,7 @@ def sample_colors_at(points, window=3):
                 img = sct.grab(region)
                 arr = np.frombuffer(img.rgb, dtype=np.uint8)
                 arr = arr.reshape((window, window, 3))
-                r, g, b = arr.mean(axis=(0, 1)).astype(int)
+                r, g, b = (int(v) for v in arr.mean(axis=(0, 1)))
                 colors.append({"R": r, "G": g, "B": b})
             except Exception as e:
                 print(f"⚠️ Sampling failed at ({x}, {y}): {e}")
