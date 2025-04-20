@@ -1,6 +1,8 @@
 import tkinter as tk
 import json
 import os
+import ctypes
+import sys
 
 # ─── COPY FROM YOUR EXISTING SCRIPT ──────────────────────────────────────
 
@@ -65,6 +67,17 @@ class LineSelector(tk.Tk):
 
 def main():
     app = LineSelector(num_lines=2, leds_per_line=NUM_LEDS // 2)
+    if sys.platform == "win32":
+        try:
+            # Find the window with class name "TkTopLevel"
+            hwnd = ctypes.windll.user32.FindWindowW("TkTopLevel", None)
+            if hwnd != 0:
+                ctypes.windll.user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                ctypes.windll.user32.SetForegroundWindow(hwnd)
+        except Exception as e:
+            print(f"⚠️ Could not bring selector to front: {e}")
+
+    
     app.mainloop()
 
     # Round and save points as list of dicts for easy JSON use

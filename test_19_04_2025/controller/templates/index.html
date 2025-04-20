@@ -1126,9 +1126,19 @@ document.getElementById("screenToggle").addEventListener("change", async (e) => 
         () => {
           // On OK, launch the selector
           e.target.disabled = true;
-          fetch("/launch_selector").then(() => {
-            socket.emit("toggle", { key: "screen" }); // enable it after setup
-          });
+          const content = document.getElementById("popupContent");
+const buttons = document.getElementById("popupButtons");
+
+content.textContent = "Launching selector in 5 seconds...";
+buttons.style.display = "none";
+e.target.disabled = true;  // prevent interaction
+
+setTimeout(() => {
+  fetch("/launch_selector").then(() => {
+    socket.emit("toggle", { key: "screen" });
+    e.target.disabled = false; // re-enable after launch
+  });
+}, 5000);
         },
         () => {
           // On Cancel, revert the toggle
