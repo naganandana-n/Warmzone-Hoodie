@@ -1125,6 +1125,7 @@ document.getElementById("screenToggle").addEventListener("change", async (e) => 
         "In 5 seconds, you'll select screen regions to sample color from. Proceed?",
         () => {
           // On OK, launch the selector
+          e.target.disabled = true;
           fetch("/launch_selector").then(() => {
             socket.emit("toggle", { key: "screen" }); // enable it after setup
           });
