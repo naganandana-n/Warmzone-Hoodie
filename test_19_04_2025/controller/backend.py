@@ -507,33 +507,40 @@ NUM_DISTINCT_COLORS = 6
 COLOR_SIMILARITY_THRESHOLD = 80
 
 def get_screen_grid_colors():
-    """Capture screen colors and extract dominant ones."""
+    """Load saved points and sample LED colors from screen."""
+    points_path = os.path.join(os.path.dirname(__file__), "led_points.json")
+    try:
+        with open(points_path, "r") as f:
+            points = json.load(f)
+            points = [(pt["x"], pt["y"]) for pt in points]
+    except Exception as e:
+        print(f"❌ Could not load LED points from JSON: {e}")
+        return []
+
+    return sample_colors_at(points)
+
+def sample_colors_at(points, window=3):
+    """Sample average RGB values from small screen regions around each point."""
+    half = window // 2
+    colors = []
     with mss.mss() as sct:
-        screen = sct.grab(sct.monitors[1])
-        img = np.array(screen)
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(img_rgb)
-        enhancer = ImageEnhance.Color(pil_img)
-        img_rgb = np.array(enhancer.enhance(1.4))
-
-        box_width = img_rgb.shape[1] // GRID_COLS
-        box_height = img_rgb.shape[0] // GRID_ROWS
-        grid_colors = []
-
-        for row in range(GRID_ROWS):
-            for col in range(GRID_COLS):
-                x1, y1 = col * box_width, row * box_height
-                x2, y2 = x1 + box_width, y1 + box_height
-                section = img_rgb[y1:y2, x1:x2]
-
-                avg_color = np.mean(section, axis=(0, 1)).astype(int)
-                r, g, b = avg_color.tolist()
-                brightness = np.sqrt(0.299 * (r**2) + 0.587 * (g**2) + 0.114 * (b**2))
-
-                if brightness > BRIGHTNESS_THRESHOLD:
-                    grid_colors.append({"R": r, "G": g, "B": b})
-
-        return grid_colors[:NUM_DISTINCT_COLORS]
+        for x, y in points:
+            region = {
+                "left": int(x) - half,
+                "top": int(y) - half,
+                "width": window,
+                "height": window
+            }
+            try:
+                img = sct.grab(region)
+                arr = np.frombuffer(img.rgb, dtype=np.uint8)
+                arr = arr.reshape((window, window, 3))
+                r, g, b = arr.mean(axis=(0, 1)).astype(int)
+                colors.append({"R": r, "G": g, "B": b})
+            except Exception as e:
+                print(f"⚠️ Sampling failed at ({x}, {y}): {e}")
+                colors.append({"R": 0, "G": 0, "B": 0})  # fallback
+    return colors
 
 def send_data():
     """Send merged JSON data for screen, audio, and mouse updates at a fixed rate."""
