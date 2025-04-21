@@ -238,14 +238,14 @@ def load_state_from_json():
     except Exception as e:
         print(f"⚠️ Could not load previous state. Using default: {e}")
         return {
-            "audio": True,
-            "screen": True,
-            "mouse": True,
+            "audio": False,
+            "screen": False,
+            "mouse": False,
             "sensitivity": 3,
-            "heaters": [1, 1, 1],
+            "heaters": [0, 0, 0],
             "vibration": False,
             "sync_with_audio": False,
-            "lights_enabled": True
+            "lights_enabled": False
         }
 
 state = load_state_from_json()
