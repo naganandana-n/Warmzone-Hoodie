@@ -165,11 +165,12 @@
     }
 
     .vb-step img {
-  width: 100%;
-  max-width: 640px;
+  display: block;
+  margin: 0.75rem auto 0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-top: 0.75rem;
+  max-width: 100%;        /* ✅ this ensures it never overflows */
+  height: auto;           /* ✅ keep aspect ratio */
 }
 
     .vb-step p {
@@ -222,14 +223,14 @@
 
     <div class="vb-step">
       <p><strong>5.</strong> In the <strong>Properties</strong> window, go to the <strong>Listen</strong> tab.<br />
-      Check the box <em>"Listen to this device"</em>.<br />
-      In <em>Playback through this device</em>, select your headphones or speakers.</p>
+         Check the box <em>"Listen to this device"</em>.<br />
+         In <em>Playback through this device</em>, select your headphones or speakers.</p>
       <img src="{{ url_for('static', filename='step3.png') }}" alt="Step 3" />
     </div>
 
     <div class="vb-step">
       <p><strong>6.</strong> Click <strong>Apply</strong> and then <strong>OK</strong>.<br />
-      Back in the Sound window, click <strong>Apply</strong> and <strong>OK</strong> again.</p>
+         Back in the Sound window, click <strong>Apply</strong> and <strong>OK</strong> again.</p>
     </div>
 
     <div class="vb-step">
