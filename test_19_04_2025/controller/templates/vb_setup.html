@@ -165,12 +165,11 @@
     }
 
     .vb-step img {
-      width: 100%;
-      max-width: 640px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-top: 0.75rem;
-    }
+  display: block;
+  margin: 0.75rem auto 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
 
     .vb-step p {
       font-size: 1.05rem;
@@ -200,19 +199,20 @@
 
   <div class="container">
 
-    <div class="vb-step">
-      <p><strong>1.</strong> Click the button below to open your Windows sound settings.</p>
-      <button class="btn" onclick="openSoundSettings()">Sound Settings</button>
-    </div>
+    <button class="btn" onclick="openSoundSettings()">Sound Settings</button>
+
+<div class="vb-step">
+  <p><strong>1.</strong> Click the button to open your Windows sound settings.</p>
+</div>
 
     <div class="vb-step">
       <p><strong>2.</strong> In the <strong>Playback</strong> tab, select <em>CABLE Input</em> and click <strong>Set Default</strong>.</p>
-      <img src="{{ url_for('static', filename='images/step1.png') }}" alt="Step 1" />
+      <img src="{{ url_for('static', filename='step1.png') }}" alt="Step 1" />
     </div>
 
     <div class="vb-step">
       <p><strong>3.</strong> In the <strong>Recording</strong> tab, select <em>CABLE Output</em> and click <strong>Set Default</strong>.</p>
-      <img src="{{ url_for('static', filename='images/step2.png') }}" alt="Step 2" />
+      <img src="{{ url_for('static', filename='step2.png') }}" alt="Step 2" />
     </div>
 
     <div class="vb-step">
@@ -223,7 +223,7 @@
       <p><strong>5.</strong> In the <strong>Properties</strong> window, go to the <strong>Listen</strong> tab.<br />
       Check the box <em>"Listen to this device"</em>.<br />
       In <em>Playback through this device</em>, select your headphones or speakers.</p>
-      <img src="{{ url_for('static', filename='images/step3.png') }}" alt="Step 3" />
+      <img src="{{ url_for('static', filename='step3.png') }}" alt="Step 3" />
     </div>
 
     <div class="vb-step">
