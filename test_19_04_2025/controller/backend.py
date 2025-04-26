@@ -659,8 +659,6 @@ import os
 flush_counter = 0
 latest_json_data = None
 
-# Track whether heaters need default reset to "Low" next time they are enabled
-need_reset_heaters = False
 
 CONTROL_JSON_PATH = os.path.join(os.path.dirname(__file__), "control_state.json")
 SHUTDOWN_FLAG_PATH = os.path.join(os.path.dirname(__file__), "shutdown_flag.json")
@@ -904,33 +902,10 @@ def send_data():
         global need_reset_heaters
 
         heaters = control.get("heaters", [1, 1, 1])
-        mouse_enabled = control.get("mouse", False)
         heaters_enabled = control.get("heaters_enabled", True)
-        
-        # Check if heaters are ON, but all sliders are OFF and mouse control is OFF
-        if heaters_enabled and all(h == 0 for h in heaters) and not mouse_enabled:
-        # If so, disable heaters
-            heaters_enabled = False
-            control["heaters_enabled"] = False
-            need_reset_heaters = True
-            print("🔥 All heaters off & mouse control off. Disabling heaters automatically.")
-            # ✅ Save the updated control state to control_state.json
-        
-            with open(CONTROL_JSON_PATH, "w") as f:
-                json.dump(control, f, indent=2)
-            
-        # If heaters are being re-enabled after auto-disable, reset sliders to Low
-        if not heaters_enabled:
-            json_data["heaters_enabled"] = False
-        else:
-            json_data["heaters_enabled"] = True
-            if need_reset_heaters:
-                heaters = [1, 1, 1]
-                control["heaters"] = heaters
-                need_reset_heaters = False
-                print("🔧 Resetting heaters to LOW on re-enable.")
-                
+        json_data["heaters_enabled"] = heaters_enabled
         json_data["heaters"] = heaters
+                
         json_data["vibration"] = control.get("vibration", False)
         json_data["sync_with_audio"] = control.get("sync_with_audio", False)
 

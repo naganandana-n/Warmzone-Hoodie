@@ -313,16 +313,12 @@ def toggle(data):
     elif key.startswith("heater"):
         idx = int(key[-1]) - 1
         state["heaters"][idx] = data["value"]
-    elif key in state and isinstance(state[key], bool):
-        if "value" in data:
-            state[key] = data["value"]    # ✅ Use value sent from frontend
-        else:
-            state[key] = not state[key]    # Fallback (legacy)
+    elif key in ["audio", "screen", "mouse", "vibration", "sync_with_audio"]:
+        state[key] = not state.get(key, False)
     elif key == "lights_enabled":
-        if "value" in data:
-            state["lights_enabled"] = data["value"]
-        else:
-            state["lights_enabled"] = not state.get("lights_enabled", True)
+        state["lights_enabled"] = data.get("value", not state.get("lights_enabled", True))
+    elif key == "heaters_enabled":
+        state["heaters_enabled"] = data.get("value", not state.get("heaters_enabled", True))
 
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
