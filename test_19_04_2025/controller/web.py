@@ -321,6 +321,9 @@ def toggle(data):
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
 
+    # ✅ NEW: After saving, send update to all clients
+    socketio.emit("update", state)
+
 
 def write_shutdown_flag():
     try:

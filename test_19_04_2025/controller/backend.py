@@ -914,6 +914,10 @@ def send_data():
             control["heaters_enabled"] = False
             need_reset_heaters = True
             print("🔥 All heaters off & mouse control off. Disabling heaters automatically.")
+            # ✅ Save the updated control state to control_state.json
+        
+            with open(CONTROL_JSON_PATH, "w") as f:
+                json.dump(control, f, indent=2)
             
         # If heaters are being re-enabled after auto-disable, reset sliders to Low
         if not heaters_enabled:
