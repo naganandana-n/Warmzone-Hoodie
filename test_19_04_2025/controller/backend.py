@@ -900,10 +900,13 @@ def send_data():
         # Future support
         json_data["sensitivity"] = control.get("sensitivity", 3)
 
-        heaters = control.get("heaters", [1, 1, 1])
+        # 🔹 Heaters (✅ updated logic)
         heaters_enabled = control.get("heaters_enabled", True)
-        json_data["heaters_enabled"] = heaters_enabled
-        json_data["heaters"] = heaters
+        if heaters_enabled:
+            json_data["heaters"] = control.get("heaters", [1, 1, 1])
+        else:
+            json_data["heaters"] = [0, 0, 0]
+
                 
         json_data["vibration"] = control.get("vibration", False)
         json_data["sync_with_audio"] = control.get("sync_with_audio", False)
