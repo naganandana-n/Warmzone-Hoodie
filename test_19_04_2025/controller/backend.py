@@ -899,7 +899,6 @@ def send_data():
 
         # Future support
         json_data["sensitivity"] = control.get("sensitivity", 3)
-        global need_reset_heaters
 
         heaters = control.get("heaters", [1, 1, 1])
         heaters_enabled = control.get("heaters_enabled", True)
