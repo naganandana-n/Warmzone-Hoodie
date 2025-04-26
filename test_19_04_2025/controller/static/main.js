@@ -150,21 +150,15 @@ function animate() {
   }
 
   function computeModelFile() {
-    const state = window.latestControlState || {
-      lights_enabled: true,
-      audio: false,
-      screen: false,
-      mouse: false,
-      heaters: [0, 0, 0],
-      vibration: false
-    };
-  
-    const light = state.lights_enabled && (state.audio || state.screen) ? 1 : 0;
+    const state = window.latestControlState || { lights_enabled: true, audio: false, screen: false, mouse: false, heaters: [0, 0, 0], vibration: false };
+
+    const light = state.lights_enabled ? 1 : 0;  // ✅ Only depends on "Enable Lights"
     const heater = state.mouse || state.heaters?.some(h => h > 0) ? 1 : 0;
     const vibration = state.vibration ? 1 : 0;
+
     const code = `${light}${heater}${vibration}`;
     return `hoodie${code}.gltf`;
-  }
+}
 
   function updateModelFromState() {
     const modelFile = computeModelFile();
