@@ -1105,14 +1105,38 @@ document.getElementById("heater3Label").textContent = getHeaterLevelText(initial
   socket.emit("toggle", { key: "heaters_enabled", value: enabled });
 });
 socket.on('update', (data) => {
-  if (typeof data.heaters_enabled !== 'undefined') {
-    const heaterMainToggle = document.getElementById("heaterMainToggle");
-    const heaterSubfeatures = document.getElementById("heaterSubfeatures");
+  console.log('Update received:', data);
 
-    heaterMainToggle.checked = data.heaters_enabled;
-    heaterSubfeatures.classList.toggle("hidden", !data.heaters_enabled);
-    window.latestControlState.heaters_enabled = data.heaters_enabled;
-  }
+  // 🔵 Merge the new data into the latestControlState carefully
+  window.latestControlState = { ...window.latestControlState, ...data };
+
+  // 🔵 Update the UI properly
+  document.getElementById("lightToggle").checked = window.latestControlState.lights_enabled ?? true;
+  document.getElementById("lightSubfeatures").classList.toggle("hidden", !window.latestControlState.lights_enabled);
+
+  const heaterMainToggle = document.getElementById("heaterMainToggle");
+  const heaterSubfeatures = document.getElementById("heaterSubfeatures");
+  heaterMainToggle.checked = window.latestControlState.heaters_enabled ?? true;
+  heaterSubfeatures.classList.toggle("hidden", !window.latestControlState.heaters_enabled);
+
+  document.getElementById("audioToggle").checked = window.latestControlState.audio ?? false;
+  document.getElementById("screenToggle").checked = window.latestControlState.screen ?? false;
+  document.getElementById("mouseToggle").checked = window.latestControlState.mouse ?? false;
+  document.getElementById("vibrationToggle").checked = window.latestControlState.vibration ?? false;
+  document.getElementById("syncToggle").checked = window.latestControlState.sync_with_audio ?? false;
+
+  // Sliders (optional - depending if you want to live update)
+  document.getElementById("heater1").value = window.latestControlState.heaters?.[0] ?? 0;
+  document.getElementById("heater2").value = window.latestControlState.heaters?.[1] ?? 0;
+  document.getElementById("heater3").value = window.latestControlState.heaters?.[2] ?? 0;
+  document.getElementById("heater1Label").textContent = getHeaterLevelText(window.latestControlState.heaters?.[0]);
+  document.getElementById("heater2Label").textContent = getHeaterLevelText(window.latestControlState.heaters?.[1]);
+  document.getElementById("heater3Label").textContent = getHeaterLevelText(window.latestControlState.heaters?.[2]);
+
+  document.getElementById("sensitivity").value = window.latestControlState.sensitivity ?? 3;
+  document.getElementById("sensitivitySlider").classList.toggle("hidden", !window.latestControlState.mouse);
+  document.getElementById("heaterControls").classList.toggle("hidden", window.latestControlState.mouse);
+  document.getElementById("syncAudio").classList.toggle("hidden", !window.latestControlState.vibration);
 });
 
     checkPorts();
