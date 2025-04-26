@@ -633,9 +633,9 @@ void updateLEDpixels() {
       int step = 5;  // ← You can adjust this (try 3, 5, or 8 depending on how fast you want)
 
 if (current_colors[i][c] < target_colors[i][c]) {
-  current_colors[i][c] = min(current_colors[i][c] + step, target_colors[i][c]);
+  current_colors[i][c] = (uint8_t)min((int)current_colors[i][c] + step, (int)target_colors[i][c]);
 } else if (current_colors[i][c] > target_colors[i][c]) {
-  current_colors[i][c] = max(current_colors[i][c] - step, target_colors[i][c]);
+  current_colors[i][c] = (uint8_t)max((int)current_colors[i][c] - step, (int)target_colors[i][c]);
 }
     }
     pixels.setPixelColor(i, pixels.Color(current_colors[i][0], current_colors[i][1], current_colors[i][2]));
