@@ -314,16 +314,19 @@ def toggle(data):
         idx = int(key[-1]) - 1
         state["heaters"][idx] = data["value"]
     elif key in state and isinstance(state[key], bool):
-        state[key] = not state[key]
+        if "value" in data:
+            state[key] = data["value"]    # ✅ Use value sent from frontend
+        else:
+            state[key] = not state[key]    # Fallback (legacy)
     elif key == "lights_enabled":
-        state["lights_enabled"] = not state.get("lights_enabled", True) 
+        if "value" in data:
+            state["lights_enabled"] = data["value"]
+        else:
+            state["lights_enabled"] = not state.get("lights_enabled", True)
 
     print(f"🔄 Updated state: {state}")
     write_state_to_json()
-
-    # ✅ NEW: After saving, send update to all clients
     socketio.emit("update", state)
-
 
 def write_shutdown_flag():
     try:
