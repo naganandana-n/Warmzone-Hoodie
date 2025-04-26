@@ -1004,7 +1004,8 @@ html, body {
   screen: false,
   mouse: false,
   vibration: false,
-  heaters: [0, 0, 0]
+  heaters: [0, 0, 0],
+  heaters_enabled: true 
 };
 
   async function checkPorts() {
@@ -1074,6 +1075,12 @@ window.latestControlState.lights_enabled = document.getElementById("lightToggle"
     document.getElementById("sensitivitySlider").classList.toggle("hidden", !initialState.mouse);
     document.getElementById("heaterControls").classList.toggle("hidden", initialState.mouse);
     document.getElementById("syncAudio").classList.toggle("hidden", !initialState.vibration);
+    document.getElementById("heaterMainToggle").addEventListener("change", (e) => {
+  const enabled = e.target.checked;
+  window.latestControlState.heaters_enabled = enabled;
+  document.getElementById("heaterSubfeatures").classList.toggle("hidden", !enabled);
+  socket.emit("toggle", { key: "heaters_enabled", value: enabled });
+});
 
     checkPorts();
     setInterval(monitorESPConnection, 5000);
