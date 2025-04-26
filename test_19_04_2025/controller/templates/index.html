@@ -924,34 +924,49 @@ html, body {
 </div>
 </div>
   
-      <div class="container">
-        <h2>Heaters</h2>
-        <div class="feature">
-          <span>Control Heaters by <strong>Mouse Speed</strong></span>
-          <label class="toggle">
-            <input type="checkbox" id="mouseToggle" />
-            <span class="slider-round"></span>
-          </label>
-        </div>
-        <div id="sensitivitySlider" class="feature sub-feature">
-          <span>Sensitivity</span>
-          <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
-        </div>
-        <div id="heaterControls" class="sub-feature hidden">
-          <div class="feature">
-            <span><strong>Shoulder</strong> Heater</span>
-            <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
-          </div>
-          <div class="feature">
-            <span><strong>Pelvic</strong> Heater</span>
-            <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
-          </div>
-          <div class="feature">
-            <span><strong>Lower Back</strong> Heater</span>
-            <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
-          </div>
-        </div>
+<div class="container">
+  <h2>Heaters</h2>
+
+  <!-- ✅ NEW: Enable Heaters Toggle -->
+  <div class="feature">
+    <span>Enable Heaters</span>
+    <label class="toggle">
+      <input type="checkbox" id="heaterMainToggle" checked />
+      <span class="slider-round"></span>
+    </label>
+  </div>
+
+  <!-- ✅ Wrap the rest inside heaterSubfeatures -->
+  <div id="heaterSubfeatures">
+    <div class="feature">
+      <span>Control Heaters by <strong>Mouse Speed</strong></span>
+      <label class="toggle">
+        <input type="checkbox" id="mouseToggle" />
+        <span class="slider-round"></span>
+      </label>
+    </div>
+
+    <div id="sensitivitySlider" class="feature sub-feature">
+      <span>Sensitivity</span>
+      <input type="range" min="0" max="5" value="2" class="slider" id="sensitivity" />
+    </div>
+
+    <div id="heaterControls" class="sub-feature hidden">
+      <div class="feature">
+        <span><strong>Shoulder</strong> Heater</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater1" />
       </div>
+      <div class="feature">
+        <span><strong>Pelvic</strong> Heater</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater2" />
+      </div>
+      <div class="feature">
+        <span><strong>Lower Back</strong> Heater</span>
+        <input type="range" min="0" max="3" value="1" class="slider" id="heater3" />
+      </div>
+    </div>
+  </div>
+</div>
   
       <div class="container">
         <h2>Vibration</h2>
