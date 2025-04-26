@@ -1104,6 +1104,16 @@ document.getElementById("heater3Label").textContent = getHeaterLevelText(initial
   document.getElementById("heaterSubfeatures").classList.toggle("hidden", !enabled);
   socket.emit("toggle", { key: "heaters_enabled", value: enabled });
 });
+socket.on('update', (data) => {
+  if (typeof data.heaters_enabled !== 'undefined') {
+    const heaterMainToggle = document.getElementById("heaterMainToggle");
+    const heaterSubfeatures = document.getElementById("heaterSubfeatures");
+
+    heaterMainToggle.checked = data.heaters_enabled;
+    heaterSubfeatures.classList.toggle("hidden", !data.heaters_enabled);
+    window.latestControlState.heaters_enabled = data.heaters_enabled;
+  }
+});
 
     checkPorts();
     setInterval(monitorESPConnection, 5000);
